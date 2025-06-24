@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.hazardiqplus" />
+                  <option name="mobileSdkAppId" value="1:658407699523:android:9a449d22d39218840c90f6" />
+                  <option name="projectId" value="hazardiq-3fa40" />
+                  <option name="projectNumber" value="658407699523" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

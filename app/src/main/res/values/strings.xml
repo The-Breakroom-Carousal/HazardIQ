@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">HazardIQ+</string>
+    <string name="not_registerd"><u>Not Registered Yet?\nSign Up!</u></string>
+    <string name="default_web_client_id">1:1097758068194:android:4e9c3cbc65366b8c1d7dbb</string>
+
+
 </resources>

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "658407699523",
+    "project_id": "hazardiq-3fa40",
+    "storage_bucket": "hazardiq-3fa40.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:658407699523:android:9a449d22d39218840c90f6",
+        "android_client_info": {
+          "package_name": "com.hazardiqplus"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "658407699523-348bh431hl0sb8fa3mnuhq0ldojfq9on.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hazardiqplus",
+            "certificate_hash": "d7e6c8988097cf7010398ae7bdd944f1c56af710"
+          }
+        },
+        {
+          "client_id": "658407699523-eobc1gsbi4nmmhvue3b8jjvq9u81kqrj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiBA_gm3ph32n7TKfFDXdIpoFxjeCFCkU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "658407699523-eobc1gsbi4nmmhvue3b8jjvq9u81kqrj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
