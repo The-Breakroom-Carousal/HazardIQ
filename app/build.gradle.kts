@@ -43,7 +43,6 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation(libs.firebase.auth)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
@@ -52,17 +51,22 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
 
-
     implementation("com.google.android.material:material:1.9.0")
     implementation("com.airbnb.android:lottie:6.3.0")
     implementation("androidx.core:core-ktx:1.10.0")
-    implementation ("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
 
-    implementation ("com.google.firebase:firebase-firestore:24.6.1")
-    // Firebase BoM (manage all versions)
-    implementation(platform("com.google.firebase:firebase-bom:32.0.0"))
+
+
+// Firebase dependencies (without version numbers!)
+    implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
+
+    // ✅ Firebase dependencies (no version numbers)
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-firestore")
+
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+
 }

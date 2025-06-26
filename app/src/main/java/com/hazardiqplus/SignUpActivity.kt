@@ -1,5 +1,6 @@
 package com.hazardiqplus
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -7,7 +8,6 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.breeze.databinding.ActivitySignUpBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
@@ -17,15 +17,15 @@ class SignUpActivity : AppCompatActivity() {
 
     private lateinit var firebaseAuth: FirebaseAuth
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         firebaseAuth = FirebaseAuth.getInstance()
 
         val textView =findViewById<TextView>(R.id.textView)
-
         val emailEt=findViewById<EditText>(R.id.emailEt)
-        val passEt=findViewById<EditText>(R.id.passET)
+        val passET=findViewById<EditText>(R.id.passET)
         val confirmPassEt=findViewById<EditText>(R.id.confirmPass_Et)
         textView.setOnClickListener {
             val intent = Intent(this, login_signup::class.java)
