@@ -41,61 +41,84 @@ router.get('/registered', async (req, res) => {
     const result = await pool.query('SELECT * FROM users ORDER BY id DESC');
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error fetching FIRs:', err);
+    console.error('Error fetching user details:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 });
 
-// // Get a specific FIR by ID
-// router.get('/:id',async(req,res)=>
-// {
-//   try{
-//         const result = await pool.query('SELECT * FROM fir WHERE id = $1',[id]);
-//         if (result.rows.length === 0) return res.status(404).json({ error: 'FIR not found.' });
-//         res.status(200).json(result.rows[0]);
+// // Get a specific user detail by ID
+router.get('/me',async(req,res)=>
+{
+   const idToken = req.headers.idtoken;
+  if (!idToken) {
+    return res.status(401).json({ error: 'Missing ID token' });
+  }
+  try{
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const firebase_uid = decodedToken.uid;
+        const result = await pool.query('SELECT * FROM users WHERE firebase_id = $1',[id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'user not found.' });
+        res.status(200).json(result.rows[0]);
         
-//   }catch(err){
-//     console.error('Error fetching FIR by ID:', err);
-//       res.status(500).json({ error: 'Internal server error.' });
-//   }
-// }
-// );
+  }catch(err){
+    console.error('Error fetching user by ID:', err);
+      res.status(500).json({ error: 'Internal server error.' });
+  }
+}
+);
 
-// //update  an fir
-// router.put('./id',async(req,res)=>
-// {
-//   try{
-//     const { id } = req.params;
-//     const { officer_name, station, description, priority } = req.body;
+//update  an userinfo
+router.put('/user',async(req,res)=>
+  {
 
-//     const result = await pool.query(
-//       'UPDATE fir SET officer_name = $1, station = $2, description = $3, priority = $4 WHERE id = $5 RETURNING *',
-//       [officer_name, station, description, priority, id]
-//     );
-//     if (result.length==0 ) return res.status(404).json({error :'FIR NOT FOUND'});
-//     res.status(200).json(result.rows[0]);
+  const idToken = req.headers.idtoken;
+
+  if (!idToken) return res.status(401).json({ error: 'Missing ID token' });
+
+  try{
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const firebase_uid = decodedToken.uid;
+    const { name, role, location_lat, location_lng, fcm_token } = req.body;
+
+    const result = await pool.query(
+      `UPDATE users
+      SET name = COALESCE($1, name),
+          role = COALESCE($2, role),
+          location_lat = COALESCE($3, location_lat),
+          location_lng = COALESCE($4, location_lng),
+          fcm_token = COALESCE($5, fcm_token)
+      WHERE firebase_uid = $6 RETURNING *`,
+      [ name, role, location_lat, location_lng, fcm_token,idToken]
+    );
+    if (result.length==0 ) return res.status(404).json({error :'FIR NOT FOUND'});
+    res.status(200).json(result.rows[0]);
 
 
-//   }catch(err){
-//     console.error('Error deleting FIR:', err);
-//     res.status(500).json({ error: 'Internal server error.' });
-//   }
-// })
+  }catch(err){
+    console.error('Error deleting FIR:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+})
   
-// router.delete('./id',async(req,res)=>
-// {
-//   try{
-//     const result=await pool.query('DELETE FROM fir WHERE id =$1',[id]);
-//     if (result.length==0 ) return res.status(404).json({error :'FIR NOT FOUND'});
-//     res.status(200).json(result.rows[0]);
+router.delete('./user',async(req,res)=>
+{
+  const idToken=req.headers.idToken;
+  if (!idToken) return res.status(401).json({ error: 'Missing ID token' });
+  try{
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const firebase_uid = decodedToken.uid;
+    const result=await pool.query('DELETE FROM users WHERE firebase_uid =$1',[firebase_uid]);
+    if (result.length==0 ) return res.status(404).json({error :'FIR NOT FOUND'});
+    res.status(200).json(result.rows[0]);
 
-//   }catch(err){
-//     console.error('Error deleting FIR:', err);
-//     res.status(500).json({ error: 'Internal server error.' });
-//   }
-// })
+  }catch(err){
+    console.error('Error deleting FIR:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+})
 
 
 
 module.exports = router;
 
+  
