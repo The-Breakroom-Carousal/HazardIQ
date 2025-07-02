@@ -13,6 +13,10 @@
         android:theme="@style/Theme.HazardIQ"
         tools:targetApi="31">
         <activity
+            android:name=".ui.citizen.CitizenMainActivity"
+            android:exported="false"
+            android:label="@string/title_activity_citizen_main" />
+        <activity
             android:name=".RoleSelectionActivity"
             android:exported="false" />
         <activity
