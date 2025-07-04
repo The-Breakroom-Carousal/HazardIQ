@@ -1,5 +1,6 @@
 package com.hazardiqplus
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -16,6 +17,8 @@ import com.google.protobuf.Api
 import com.hazardiqplus.data.RetrofitClient
 import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
+import com.hazardiqplus.ui.citizen.CitizenMainActivity
+import com.hazardiqplus.ui.responder.ResponderMainActivity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -84,7 +87,13 @@ class RoleSelectionActivity : AppCompatActivity() {
                             ) {
                                 if (response.isSuccessful && response.body()?.success == true) {
                                     Toast.makeText(this@RoleSelectionActivity, "✅ User registered", Toast.LENGTH_SHORT).show()
-                                    // proceed to HomeActivity or next screen
+                                    if(response.body()?.user?.role == "citizen"){
+                                        startActivity(Intent(this@RoleSelectionActivity, CitizenMainActivity::class.java))
+                                        finish()
+                                    }else if(response.body()?.user?.role == "responder"){
+                                        startActivity(Intent(this@RoleSelectionActivity, ResponderMainActivity::class.java))
+                                        finish()
+                                    }
                                 } else {
                                     Toast.makeText(this@RoleSelectionActivity, "⚠️ Backend error", Toast.LENGTH_SHORT).show()
                                 }

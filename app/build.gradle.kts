@@ -53,11 +53,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-
+    implementation("com.mapbox.maps:android:11.13.1")
     implementation("com.google.android.material:material:1.9.0")
     implementation("com.airbnb.android:lottie:6.3.0")
     implementation("androidx.core:core-ktx:1.10.0")

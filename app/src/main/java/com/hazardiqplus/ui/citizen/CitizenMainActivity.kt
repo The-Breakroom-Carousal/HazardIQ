@@ -9,16 +9,22 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.hazardiqplus.R
 
+import android.Manifest
+import androidx.core.app.ActivityCompat
 
 class CitizenMainActivity : AppCompatActivity() {
 
     private lateinit var bottomNav: BottomNavigationView
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_citizen_main)
         bottomNav = findViewById(R.id.nav_view)
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+            1001
+        )
 
 
         val navController = findNavController(R.id.nav_host_fragment_activity_citizen_main)
