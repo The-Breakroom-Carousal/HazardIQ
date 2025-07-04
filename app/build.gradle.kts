@@ -67,7 +67,7 @@ dependencies {
 
 
 
-// Firebase dependencies (without version numbers!)
+    // Firebase dependencies (without version numbers!)
     implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
 
     // ✅ Firebase dependencies (no version numbers)
@@ -78,4 +78,6 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-auth:20.7.0")
 
+    //mapbox
+    implementation("com.mapbox.maps:android:11.13.1")
 }
