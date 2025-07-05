@@ -8,6 +8,7 @@ const admin=require('../firebase');
 // Create an account
 router.post('/register', async (req, res) => {
   const { idToken, name, email, role } = req.body;
+  
   try {
     const decodedToken=await admin.auth().verifyIdToken(idToken);
     const firebase_uid = decodedToken.uid;
