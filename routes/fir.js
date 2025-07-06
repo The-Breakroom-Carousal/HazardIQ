@@ -7,7 +7,7 @@ const admin=require('../firebase');
 
 // Create an account
 router.post('/register', async (req, res) => {
-  const { idToken, name, email, role } = req.body;
+  const { idToken, name, email, role, location_lat, location_lng, fcm_token } = req.body;
   
   try {
     const decodedToken=await admin.auth().verifyIdToken(idToken);
@@ -101,7 +101,7 @@ router.put('/user',async(req,res)=>
   }
 })
   
-router.delete('./user',async(req,res)=>
+router.delete('/user',async(req,res)=>
 {
   const idToken=req.headers.idToken;
   if (!idToken) return res.status(401).json({ error: 'Missing ID token' });
