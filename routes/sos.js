@@ -1,3 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const pool  = require('../db');
+const admin=require('../firebase');
+const NodeGeocoder = require('node-geocoder');
+require('dotenv').config();
+
+
 router.post('/send-sos', async (req, res) => {
   const { idToken, type, city, lat, lng } = req.body;
 
@@ -62,3 +70,6 @@ router.post('/send-sos', async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+
+module.exports = router;
