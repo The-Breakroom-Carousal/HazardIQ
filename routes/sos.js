@@ -1,15 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('../db');
-const admin = require('../firebase');
-const NodeGeocoder = require('node-geocoder');
-require('dotenv').config();
-
-const geocoder = NodeGeocoder({
-  provider: process.env.GEOCODER_PROVIDER,
-  apiKey: process.env.GEOCODER_API_KEY
-});
-
 router.post('/send-sos', async (req, res) => {
   const { idToken, type, city, lat, lng } = req.body;
 
@@ -23,13 +11,11 @@ router.post('/send-sos', async (req, res) => {
     );
     const name = userRes.rows[0]?.name || "Someone";
 
-    // Fetch all responders with location
     const respondersRes = await pool.query(
       `SELECT fcm_token, location_lat, location_lng 
        FROM users 
        WHERE role = 'responder' AND fcm_token IS NOT NULL`
     );
-    
 
     const matchingTokens = [];
 
@@ -38,10 +24,16 @@ router.post('/send-sos', async (req, res) => {
 
       if (!location_lat || !location_lng) continue;
 
-      const geoRes = await geocoder.reverse({ lat: location_lat, lon: location_lng });
-      const responderCity = geoRes?.[0]?.city || geoRes?.[0]?.administrativeLevels?.level2long;
+      let responderCity = null;
+      try {
+        const geoRes = await geocoder.reverse({ lat: location_lat, lon: location_lng });
+        responderCity = geoRes?.[0]?.city || geoRes?.[0]?.administrativeLevels?.level2long || '';
+      } catch (err) {
+        console.error("Reverse geocoding failed for responder:", err.message);
+        continue;
+      }
 
-      if (responderCity && responderCity.toLowerCase() === city.toLowerCase()) {
+      if (responderCity.toLowerCase().includes(city.toLowerCase())) {
         matchingTokens.push(fcm_token);
       }
     }
@@ -49,8 +41,7 @@ router.post('/send-sos', async (req, res) => {
     if (matchingTokens.length === 0) {
       return res.status(404).json({ message: "No responders in this city" });
     }
-    
-    // Send FCM
+
     const payload = {
       notification: {
         title: `🚨 SOS Alert: ${type}`,
@@ -71,5 +62,3 @@ router.post('/send-sos', async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-module.exports = router;
