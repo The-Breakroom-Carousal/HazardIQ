@@ -2,6 +2,7 @@ package com.hazardiqplus
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.util.Patterns
 import android.widget.Button
 import android.widget.EditText
@@ -16,6 +17,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.hazardiqplus.data.RetrofitClient
+import com.hazardiqplus.data.User
+import com.hazardiqplus.ui.citizen.CitizenMainActivity
+import com.hazardiqplus.ui.responder.ResponderMainActivity
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class login_signup : AppCompatActivity() {
 
@@ -65,8 +73,17 @@ class login_signup : AppCompatActivity() {
             firebaseAuth.signInWithEmailAndPassword(email, pass)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        startActivity(Intent(this, MainActivity::class.java))
-                        finish()
+                        firebaseAuth.currentUser?.getIdToken(true)
+                            ?.addOnSuccessListener { result ->
+                                val token = result.token
+                                if (token != null) {
+                                    checkUserRoleAndRedirect(token)
+                                } else {
+                                    startActivity(Intent(this, RoleSelectionActivity::class.java))
+                                    finish()
+                                }
+                            }
+
                     } else {
                         Toast.makeText(this, "Invalid Email or Password !", Toast.LENGTH_SHORT).show()
                     }
@@ -99,8 +116,17 @@ class login_signup : AppCompatActivity() {
                 if (task.isSuccessful) {
                     val user = firebaseAuth.currentUser
                     Toast.makeText(this, "Signed in as ${user?.displayName}", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(this, MainActivity::class.java))
-                    finish()
+                    firebaseAuth.currentUser?.getIdToken(true)
+                        ?.addOnSuccessListener { result ->
+                            val token = result.token
+                            if (token != null) {
+                                checkUserRoleAndRedirect(token)
+                            } else {
+                                startActivity(Intent(this, RoleSelectionActivity::class.java))
+                                finish()
+                            }
+                        }
+
                 } else {
                     Toast.makeText(this, "Authentication failed", Toast.LENGTH_SHORT).show()
                 }
@@ -133,9 +159,44 @@ class login_signup : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         val currentUser = firebaseAuth.currentUser
-        if (currentUser!=null) {
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-        }
+        firebaseAuth.currentUser?.getIdToken(true)
+            ?.addOnSuccessListener { result ->
+                val token = result.token
+                if (token != null) {
+                    checkUserRoleAndRedirect(token)
+                } else {
+                    startActivity(Intent(this, RoleSelectionActivity::class.java))
+                    finish()
+                }
+            }
+
     }
+
+    private fun checkUserRoleAndRedirect(idToken: String) {
+        val call = RetrofitClient.instance.getUserDetails(idToken)
+        call.enqueue(object : Callback<User> {
+            override fun onResponse(call: Call<User>, response: Response<User>) {
+
+                Log.d("DEBUG", "Response JSON: ${response.body()}")
+                val role = response.body()?.role
+                Toast.makeText(this@login_signup, "Role: $role", Toast.LENGTH_SHORT).show()
+                when (role?.lowercase()) {
+                    "citizen" -> startActivity(Intent(this@login_signup, CitizenMainActivity::class.java))
+                    "responder" -> startActivity(Intent(this@login_signup, ResponderMainActivity::class.java))
+                    "admin" -> Toast.makeText(this@login_signup, "Admin not implemented", Toast.LENGTH_SHORT).show()
+                    else -> startActivity(Intent(this@login_signup, RoleSelectionActivity::class.java))
+                }
+
+                finish()
+            }
+
+            override fun onFailure(call: Call<User>, t: Throwable) {
+                Toast.makeText(this@login_signup, "Error verifying role", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@login_signup, RoleSelectionActivity::class.java))
+                finish()
+            }
+        })
+    }
+
+
 }
