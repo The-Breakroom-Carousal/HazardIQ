@@ -3,6 +3,10 @@ const router = express.Router();
 const pool  = require('../db');
 const admin=require('../firebase');
 const NodeGeocoder = require('node-geocoder');
+const geocoder = NodeGeocoder({
+  provider: 'opencage',
+  apiKey: process.env.GEOCODER_API_KEY 
+});
 require('dotenv').config();
 
 
