@@ -48,25 +48,24 @@ router.get('/registered', async (req, res) => {
 });
 
 // // Get a specific user detail by ID
-router.get('/me',async(req,res)=>
-{
-   const idToken = req.headers.idtoken;
-  if (!idToken) {
-    return res.status(401).json({ error: 'Missing ID token' });
-  }
-  try{
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        const firebase_uid = decodedToken.uid;
-        const result = await pool.query('SELECT * FROM users WHERE firebase_uid = $1',[id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'user not found.' });
-        res.status(200).json(result.rows[0]);
-        
-  }catch(err){
+router.get('/me', async (req, res) => {
+  const idToken = req.headers.idtoken;
+  if (!idToken) return res.status(401).json({ error: 'Missing ID token' });
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const firebase_uid = decodedToken.uid;
+
+    const result = await pool.query('SELECT * FROM users WHERE firebase_uid = $1', [firebase_uid]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
     console.error('Error fetching user by ID:', err);
-      res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: 'Internal server error.' });
   }
-}
-);
+});
+
 
 //update  an userinfo
 router.put('/user',async(req,res)=>
