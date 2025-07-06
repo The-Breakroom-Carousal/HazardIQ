@@ -131,7 +131,6 @@ class login_signup : AppCompatActivity() {
     }
 
     override fun onStart() {
-
         super.onStart()
         val currentUser = firebaseAuth.currentUser
         if (currentUser!=null) {

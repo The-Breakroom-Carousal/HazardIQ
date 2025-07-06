@@ -20,10 +20,10 @@ class SignUpActivity : AppCompatActivity() {
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_sign_up)
         firebaseAuth = FirebaseAuth.getInstance()
 
-        val textView =findViewById<TextView>(R.id.textView)
+        val textView = findViewById<TextView>(R.id.textView)
         val emailEt=findViewById<EditText>(R.id.emailEt)
         val passET=findViewById<EditText>(R.id.passET)
         val confirmPassEt=findViewById<EditText>(R.id.confirmPass_Et)

@@ -40,7 +40,6 @@ class CitizenHomeFragment: Fragment(R.layout.fragment_home) {
     //@RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun triggerSosCall() {
         val context = requireContext()
-        val activity = requireActivity()
 
         if (ContextCompat.checkSelfPermission(
                 context,
