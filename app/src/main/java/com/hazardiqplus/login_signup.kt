@@ -1,6 +1,7 @@
 package com.hazardiqplus
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
@@ -9,6 +10,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -42,6 +44,9 @@ class login_signup : AppCompatActivity() {
         val emailEt=findViewById<EditText>(R.id.emailEt)
         val passEt=findViewById<EditText>(R.id.passET)
         val fgtpass=findViewById<TextView>(R.id.forgotPasswordText)
+
+        checkAndRequestPermission()
+
         fgtpass.setOnClickListener{
             val intent = Intent(this, ForgotPassword::class.java)
             startActivity(intent)
@@ -158,7 +163,6 @@ class login_signup : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        val currentUser = firebaseAuth.currentUser
         firebaseAuth.currentUser?.getIdToken(true)
             ?.addOnSuccessListener { result ->
                 val token = result.token
@@ -198,5 +202,20 @@ class login_signup : AppCompatActivity() {
         })
     }
 
+    private fun checkAndRequestPermission(){
+        val locationPermissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) {
+                Toast.makeText(
+                    this,
+                    "Location permission is required to show your location on the map.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        locationPermissionRequest.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
+        }
+    }
 }

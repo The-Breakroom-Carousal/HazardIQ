@@ -20,7 +20,4 @@ interface ApiService {
 
     @POST("api/send-sos")
     fun sendSosAlert(@Body sendSosRequest: SosRequest): Call<SosResponse>
-
-
-
 }

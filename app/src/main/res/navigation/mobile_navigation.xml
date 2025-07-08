@@ -7,9 +7,9 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="com.hazardiqplus.ui.citizen.ui.home.HomeFragment"
+        android:name="com.hazardiqplus.ui.citizen.ui.home.CitizenHomeFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_citizen_home" />
 
     <fragment
         android:id="@+id/navigation_dashboard"

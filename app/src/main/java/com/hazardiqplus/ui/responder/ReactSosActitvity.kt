@@ -8,6 +8,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.hazardiqplus.R
 
 class ReactSosActitvity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
