@@ -59,12 +59,17 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 ).show()
             }
         }
+    private var change = false
     private val onIndicatorBearingChangedListener = OnIndicatorBearingChangedListener {
         mapView.mapboxMap.setCamera(CameraOptions.Builder().bearing(it).build())
     }
     private val onIndicatorPositionChangedListener = OnIndicatorPositionChangedListener {
-        mapView.mapboxMap.setCamera(CameraOptions.Builder().center(it).zoom(12.0).build())
+        if (!change) {
+            mapView.mapboxMap.setCamera(CameraOptions.Builder().center(it).zoom(12.0).build())
+            change = true
+        }
         mapView.gestures.focalPoint = mapView.mapboxMap.pixelForCoordinate(it)
+        updateCityName(it.latitude(), it.longitude())
     }
 
     override fun onCreateView(
@@ -84,7 +89,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         super.onViewCreated(view, savedInstanceState)
 
         mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) {
-            checkLocationPermissionAndLoad()
             //loadDummyAQIHeatmap(it)
             //loadDummyHazardMarkers(it)
         }
