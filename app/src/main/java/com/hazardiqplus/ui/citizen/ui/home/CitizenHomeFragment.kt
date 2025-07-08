@@ -142,7 +142,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
             style.addSource(geoJsonSource)
 
             val heatmapLayer = heatmapLayer("aqi-heatmap", "aqi-source") {
-                maxZoom(12.0)
+                maxZoom(15.5)
                 heatmapColor(
                     interpolate {
                         linear()
