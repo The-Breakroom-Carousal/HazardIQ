@@ -25,6 +25,7 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
+import com.mapbox.maps.extension.style.expressions.dsl.generated.literal
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.interpolate
 import com.mapbox.maps.extension.style.layers.addLayer
@@ -34,6 +35,9 @@ import com.mapbox.maps.extension.style.layers.generated.lineLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
+import com.mapbox.maps.plugin.gestures.gestures
+import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListener
+import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -55,6 +59,13 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 ).show()
             }
         }
+    private val onIndicatorBearingChangedListener = OnIndicatorBearingChangedListener {
+        mapView.mapboxMap.setCamera(CameraOptions.Builder().bearing(it).build())
+    }
+    private val onIndicatorPositionChangedListener = OnIndicatorPositionChangedListener {
+        mapView.mapboxMap.setCamera(CameraOptions.Builder().center(it).zoom(12.0).build())
+        mapView.gestures.focalPoint = mapView.mapboxMap.pixelForCoordinate(it)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -64,6 +75,8 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         tvCityName = view.findViewById(R.id.tvCityName)
         mapView = view.findViewById(R.id.mapView)
         btnSafeRoutes = view.findViewById(R.id.btnSafeRoutes)
+        mapView.location.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
+        mapView.location.addOnIndicatorBearingChangedListener(onIndicatorBearingChangedListener)
         return view
     }
 
@@ -72,13 +85,13 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
         mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) {
             checkLocationPermissionAndLoad()
-            loadDummyAQIHeatmap(it)
-            loadDummyHazardMarkers(it)
+            //loadDummyAQIHeatmap(it)
+            //loadDummyHazardMarkers(it)
         }
 
         btnSafeRoutes.setOnClickListener {
             Toast.makeText(requireContext(), "Safe Routes clicked!", Toast.LENGTH_SHORT).show()
-            showDummySafeRoute()
+            //showDummySafeRoute()
         }
     }
 
@@ -95,15 +108,8 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun enableUserLocation() {
-        val locationComponent = mapView.location
-        locationComponent.updateSettings {
-            enabled = true
-            pulsingEnabled = true
-        }
-
         mapView.location.addOnIndicatorPositionChangedListener { point ->
             updateCityName(point.latitude(), point.longitude())
-            moveCameraToUserLocation(point.latitude(), point.longitude())
         }
     }
 
@@ -118,15 +124,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         } catch (e: Exception) {
             Log.e("CitizenHomeFragment", "Geocoder failed: ${e.message}")
         }
-    }
-
-    private fun moveCameraToUserLocation(lat: Double, lon: Double) {
-        val cameraOptions = CameraOptions.Builder()
-            .center(Point.fromLngLat(lon, lat))
-            .zoom(12.0)
-            .build()
-
-        mapView.mapboxMap.setCamera(cameraOptions)
     }
 
     private fun loadDummyAQIHeatmap(style: Style) {
@@ -150,9 +147,9 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     interpolate {
                         linear()
                         heatmapDensity()
-                        //stop(0.0, Color.GREEN)
-                        //stop(0.5, Color.YELLOW)
-                        //stop(1.0, Color.RED)
+                        stop(Expression.literal(0.0), Expression.color(Color.GREEN))
+                        stop(Expression.literal(0.5), Expression.color(Color.YELLOW))
+                        stop(Expression.literal(1.0), Expression.color(Color.RED))
                     }
                 )
                 heatmapIntensity(
@@ -198,7 +195,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 textField(Expression.get("title"))
                 textSize(12.0)
                 textOffset(listOf(0.0, 1.5))
-                //textAnchor("top")
+                textAnchor(literal("top"))
             }
 
             style.addLayer(symbolLayer)

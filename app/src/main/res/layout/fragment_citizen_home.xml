@@ -16,11 +16,13 @@
             android:layout_height="wrap_content"
             android:text="You are in: "
             android:layout_gravity="center"/>
-        <com.mapbox.maps.MapView
 
+        <com.mapbox.maps.MapView
             android:id="@+id/mapView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            app:mapbox_locationComponentEnabled="true"
+            app:mapbox_locationComponentPuckBearing="heading" />
     </LinearLayout>
 
     <Button
