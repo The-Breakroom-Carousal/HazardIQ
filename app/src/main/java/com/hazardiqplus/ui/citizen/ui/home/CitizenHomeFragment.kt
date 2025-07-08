@@ -147,11 +147,36 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     interpolate {
                         linear()
                         heatmapDensity()
-                        stop(Expression.literal(0.0), Expression.color(Color.GREEN))
-                        stop(Expression.literal(0.5), Expression.color(Color.YELLOW))
-                        stop(Expression.literal(1.0), Expression.color(Color.RED))
+                        stop(
+                            Expression.literal(0.0),
+                            Expression.rgba {
+                                literal(0.0)      // R
+                                literal(255.0)    // G
+                                literal(0.0)      // B
+                                literal(0.3)      // Alpha
+                            }
+                        )
+                        stop(
+                            Expression.literal(0.5),
+                            Expression.rgba {
+                                literal(255.0)
+                                literal(255.0)
+                                literal(0.0)
+                                literal(0.3)
+                            }
+                        )
+                        stop(
+                            Expression.literal(1.0),
+                            Expression.rgba {
+                                literal(255.0)
+                                literal(0.0)
+                                literal(0.0)
+                                literal(0.3)
+                            }
+                        )
                     }
                 )
+
                 heatmapIntensity(
                     interpolate {
                         linear()
