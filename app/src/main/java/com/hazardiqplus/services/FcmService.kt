@@ -20,7 +20,7 @@ class FcmService : FirebaseMessagingService(){
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        TODO()
+        //TODO()
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
