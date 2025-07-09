@@ -34,19 +34,19 @@ class FCMSERVICE :FirebaseMessagingService(){
             val sysNotificationManager =
                 getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             sysNotificationManager.createNotificationChannel(channel)
-
         }
 
         val title = remoteMessage.notification?.title ?: "🚨 SOS Alert"
         val body = remoteMessage.notification?.body ?: "Someone needs help nearby!"
 
-        var intent = Intent(this, ReactSosActitvity::class.java).apply {
+        val intent = Intent(this, ReactSosActitvity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("lat", remoteMessage.data["lat"])
             putExtra("lng", remoteMessage.data["lng"])
             putExtra("type", remoteMessage.data["type"])
             putExtra("requesterName", remoteMessage.data["name"])
         }
+
         val stackBuilder = android.app.TaskStackBuilder.create(this).apply {
             addNextIntentWithParentStack(intent)
         }
@@ -75,10 +75,5 @@ class FCMSERVICE :FirebaseMessagingService(){
         } else {
             notificationManager.notify((0..100000).random(), notification)
         }
-
     }
-
-
-
-
 }
