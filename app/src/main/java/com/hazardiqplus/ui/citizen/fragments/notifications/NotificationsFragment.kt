@@ -1,4 +1,4 @@
-package com.hazardiqplus.ui.citizen.ui.notifications
+package com.hazardiqplus.ui.citizen.fragments.notifications
 
 import android.os.Bundle
 import android.view.View

@@ -29,16 +29,16 @@
             android:exported="false"
             android:label="@string/title_activity_citizen_main" />
         <activity
-            android:name=".RoleSelectionActivity"
+            android:name=".ui.RoleSelectionActivity"
             android:exported="false" />
         <activity
-            android:name=".ForgotPassword"
+            android:name=".ui.ForgotPassword"
             android:exported="false" />
         <activity
-            android:name=".SignUpActivity"
+            android:name=".ui.SignUpActivity"
             android:exported="false" />
         <activity
-            android:name=".login_signup"
+            android:name=".ui.LoginSignupActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -47,11 +47,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="false" />
 
         <service
-            android:name=".data.FCMSERVICE"
+            android:name=".services.FcmService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

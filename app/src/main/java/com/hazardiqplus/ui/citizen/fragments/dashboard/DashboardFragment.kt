@@ -1,4 +1,4 @@
-package com.hazardiqplus.ui.citizen.ui.dashboard
+package com.hazardiqplus.ui.citizen.fragments.dashboard
 
 import android.os.Bundle
 import android.view.View

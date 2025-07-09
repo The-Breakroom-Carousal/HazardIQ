@@ -1,4 +1,4 @@
-package com.hazardiqplus.ui.citizen.ui.home
+package com.hazardiqplus.ui.citizen.fragments.home
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -16,7 +16,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LifecycleCoroutineScope
 import com.hazardiqplus.R
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
@@ -39,8 +38,6 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListener
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import java.util.Locale
 
 class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {

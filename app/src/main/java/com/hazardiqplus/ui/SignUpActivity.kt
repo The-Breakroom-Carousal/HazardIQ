@@ -1,4 +1,4 @@
-package com.hazardiqplus
+package com.hazardiqplus.ui
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.hazardiqplus.R
 
 class SignUpActivity : AppCompatActivity() {
 
@@ -28,7 +29,7 @@ class SignUpActivity : AppCompatActivity() {
         val passET=findViewById<EditText>(R.id.passET)
         val confirmPassEt=findViewById<EditText>(R.id.confirmPass_Et)
         textView.setOnClickListener {
-            val intent = Intent(this, login_signup::class.java)
+            val intent = Intent(this, LoginSignupActivity::class.java)
             startActivity(intent)
         }
 
@@ -50,7 +51,7 @@ class SignUpActivity : AppCompatActivity() {
                     firebaseAuth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener {
                         if (it.isSuccessful) {
                             Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show()
-                            val intent = Intent(this, login_signup::class.java)
+                            val intent = Intent(this, LoginSignupActivity::class.java)
                             startActivity(intent)
                         } else {
                             handleFirebaseError(it.exception)

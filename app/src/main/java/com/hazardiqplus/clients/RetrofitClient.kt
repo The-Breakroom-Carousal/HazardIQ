@@ -1,6 +1,6 @@
-package com.hazardiqplus.data
+package com.hazardiqplus.clients
 
-import com.hazardiqplus.ApiService
+import com.hazardiqplus.services.ApiService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 

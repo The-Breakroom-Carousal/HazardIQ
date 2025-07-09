@@ -18,10 +18,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.hazardiqplus.R
-import com.hazardiqplus.data.RetrofitClient
+import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosRequest
 import com.hazardiqplus.data.SosResponse
-import com.hazardiqplus.ui.citizen.ui.home.CitizenHomeFragment
+import com.hazardiqplus.ui.citizen.fragments.home.CitizenHomeFragment
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

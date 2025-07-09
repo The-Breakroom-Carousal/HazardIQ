@@ -1,4 +1,4 @@
-package com.hazardiqplus
+package com.hazardiqplus.ui
 
 import android.Manifest
 import android.content.Intent
@@ -16,7 +16,8 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.android.gms.location.*
-import com.hazardiqplus.data.RetrofitClient
+import com.hazardiqplus.R
+import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
 import com.hazardiqplus.ui.citizen.CitizenMainActivity

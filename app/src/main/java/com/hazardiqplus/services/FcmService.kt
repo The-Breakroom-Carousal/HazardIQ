@@ -1,23 +1,27 @@
-package com.hazardiqplus.data
+package com.hazardiqplus.services
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.TaskStackBuilder
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.google.firebase.messaging.remoteMessage
-import com.hazardiqplus.ui.responder.ReactSosActitvity
 import com.hazardiqplus.R
+import com.hazardiqplus.ui.responder.ReactSosActitvity
 
-class FCMSERVICE :FirebaseMessagingService(){
+class FcmService : FirebaseMessagingService(){
+
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        TODO()
+    }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
@@ -47,7 +51,7 @@ class FCMSERVICE :FirebaseMessagingService(){
             putExtra("requesterName", remoteMessage.data["name"])
         }
 
-        val stackBuilder = android.app.TaskStackBuilder.create(this).apply {
+        val stackBuilder = TaskStackBuilder.create(this).apply {
             addNextIntentWithParentStack(intent)
         }
 
@@ -67,7 +71,7 @@ class FCMSERVICE :FirebaseMessagingService(){
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
                 notificationManager.notify((0..100000).random(), notification)
             } else {
                 Log.w("FCMService", "POST_NOTIFICATIONS permission not granted")

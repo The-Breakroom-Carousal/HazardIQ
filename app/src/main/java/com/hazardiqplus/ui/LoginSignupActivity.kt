@@ -1,5 +1,6 @@
-package com.hazardiqplus
+package com.hazardiqplus.ui
 
+import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -9,17 +10,15 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import com.hazardiqplus.data.RetrofitClient
+import com.hazardiqplus.R
+import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.User
 import com.hazardiqplus.ui.citizen.CitizenMainActivity
 import com.hazardiqplus.ui.responder.ResponderMainActivity
@@ -27,7 +26,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class login_signup : AppCompatActivity() {
+class LoginSignupActivity : AppCompatActivity() {
 
     private lateinit var firebaseAuth: FirebaseAuth
 
@@ -183,20 +182,20 @@ class login_signup : AppCompatActivity() {
 
                 Log.d("DEBUG", "Response JSON: ${response.body()}")
                 val role = response.body()?.role
-                Toast.makeText(this@login_signup, "Role: $role", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@LoginSignupActivity, "Role: $role", Toast.LENGTH_SHORT).show()
                 when (role?.lowercase()) {
-                    "citizen" -> startActivity(Intent(this@login_signup, CitizenMainActivity::class.java))
-                    "responder" -> startActivity(Intent(this@login_signup, ResponderMainActivity::class.java))
-                    "admin" -> Toast.makeText(this@login_signup, "Admin not implemented", Toast.LENGTH_SHORT).show()
-                    else -> startActivity(Intent(this@login_signup, RoleSelectionActivity::class.java))
+                    "citizen" -> startActivity(Intent(this@LoginSignupActivity, CitizenMainActivity::class.java))
+                    "responder" -> startActivity(Intent(this@LoginSignupActivity, ResponderMainActivity::class.java))
+                    "admin" -> Toast.makeText(this@LoginSignupActivity, "Admin not implemented", Toast.LENGTH_SHORT).show()
+                    else -> startActivity(Intent(this@LoginSignupActivity, RoleSelectionActivity::class.java))
                 }
 
                 finish()
             }
 
             override fun onFailure(call: Call<User>, t: Throwable) {
-                Toast.makeText(this@login_signup, "Error verifying role", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this@login_signup, RoleSelectionActivity::class.java))
+                Toast.makeText(this@LoginSignupActivity, "Error verifying role", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@LoginSignupActivity, RoleSelectionActivity::class.java))
                 finish()
             }
         })
@@ -212,10 +211,10 @@ class login_signup : AppCompatActivity() {
                 ).show()
             }
         }
-        locationPermissionRequest.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
         }
     }
 }
