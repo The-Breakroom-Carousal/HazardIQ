@@ -93,12 +93,7 @@ class LoginSignupActivity : AppCompatActivity() {
                     }
 
                 }
-
-
-
         }
-
-
     }
 
 
@@ -211,7 +206,16 @@ class LoginSignupActivity : AppCompatActivity() {
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+            val notificationPermissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                if (!granted) {
+                    Toast.makeText(
+                        this,
+                        "Notification permission is required to send notifications.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            notificationPermissionRequest.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }
