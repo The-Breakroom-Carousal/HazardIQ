@@ -39,12 +39,50 @@ import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListene
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
 import java.util.Locale
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.activity.result.ActivityResultLauncher
+import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
+import androidx.lifecycle.lifecycleScope
+import com.hazardiqplus.ml.Model // <-- update this if your model filename is different
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.tensorflow.lite.DataType
+import org.tensorflow.lite.support.image.TensorImage
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+
+import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.launch
+import java.io.File
 
 class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private lateinit var tvCityName: TextView
     private lateinit var mapView: MapView
     private lateinit var btnSafeRoutes: Button
+    private lateinit var hazardDetector: Button
+    val labels = arrayOf(
+        "Water_Disaster",                     // 0
+        "Non_Damaged_Wildlife_Forest",       // 1
+        "Non_Damaged_sea",                   // 2
+        "Non_Damaged_Buildings_Street",      // 3
+        "Non_Damaged_human",                 // 4
+        "Damaged_Infrastructure",            // 5
+        "Earthquake",                        // 6
+        "Human_Damage",                      // 7
+        "Urban_Fire",                        // 8
+        "Wild_Fire",                         // 9
+        "Land_Slide",                        // 10
+        "Drought"                            // 11
+    )
+
+    private lateinit var cameraLauncher: ActivityResultLauncher<Uri>
+    private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
+    private var imageUri: Uri? = null
     private val locationPermissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
                 enableUserLocation()
@@ -69,6 +107,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         updateCityName(it.latitude(), it.longitude())
     }
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -79,6 +118,24 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         btnSafeRoutes = view.findViewById(R.id.btnSafeRoutes)
         mapView.location.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
         mapView.location.addOnIndicatorBearingChangedListener(onIndicatorBearingChangedListener)
+        hazardDetector=view.findViewById(R.id.hazard)
+
+        permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val granted = permissions.all { it.value }
+            if (granted) openCamera()
+            else Toast.makeText(requireContext(), "Permissions denied", Toast.LENGTH_SHORT).show()
+        }
+
+        // Register camera launcher
+        cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) {
+                imageUri?.let {
+                    val bitmap = MediaStore.Images.Media.getBitmap(requireContext().contentResolver, it)
+                    runModel(bitmap)  // Run your model
+                    getUserLocation() // Show location
+                }
+            }
+        }
         return view
     }
 
@@ -89,6 +146,12 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
             //loadDummyAQIHeatmap(it)
             //loadDummyHazardMarkers(it)
         }
+//        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.tryy)
+//        runModel(bitmap)
+        hazardDetector.setOnClickListener {
+            requestPermissionsAndLaunchCamera()
+        }
+
 
         btnSafeRoutes.setOnClickListener {
             Toast.makeText(requireContext(), "Safe Routes clicked!", Toast.LENGTH_SHORT).show()
@@ -256,4 +319,115 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
             Log.e("CitizenHomeFragment", "Geocoder failed: ${e.message}")
         }
     }
+
+
+
+
+
+    private fun Fragment.runModel(bitmap: Bitmap) {
+        lifecycleScope.launch(Dispatchers.Default) {
+            try {
+                val model = Model.newInstance(requireContext())
+
+                // Step 1: Resize image
+                val resized = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
+
+                // Step 2: Normalize manually [0, 255] → [0.0, 1.0]
+                val floatValues = FloatArray(224 * 224 * 3)
+                val intValues = IntArray(224 * 224)
+                resized.getPixels(intValues, 0, 224, 0, 0, 224, 224)
+
+                for (i in intValues.indices) {
+                    val pixel = intValues[i]
+                    floatValues[i * 3 + 0] = ((pixel shr 16 and 0xFF) / 255.0f) // R
+                    floatValues[i * 3 + 1] = ((pixel shr 8 and 0xFF) / 255.0f)  // G
+                    floatValues[i * 3 + 2] = ((pixel and 0xFF) / 255.0f)        // B
+                }
+
+                // Step 3: Reorder HWC → CHW
+                val chw = FloatArray(3 * 224 * 224)
+                for (y in 0 until 224) {
+                    for (x in 0 until 224) {
+                        for (c in 0 until 3) {
+                            chw[c * 224 * 224 + y * 224 + x] =
+                                floatValues[y * 224 * 3 + x * 3 + c]
+                        }
+                    }
+                }
+
+                // Step 4: Load into input tensor
+                val inputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 3, 224, 224), DataType.FLOAT32)
+                inputBuffer.loadArray(chw)
+
+                // Step 5: Inference
+                val outputs = model.process(inputBuffer)
+                val result = outputs.outputFeature0AsTensorBuffer.floatArray
+
+                // Step 6: Postprocess
+                val predictedIndex = result.indices.maxByOrNull { result[it] } ?: -1
+                val confidence = result[predictedIndex]
+
+                model.close()
+
+                // Step 7: Toast on UI
+                launch(Dispatchers.Main) {
+                    val label = labels.getOrElse(predictedIndex) { "Unknown" }
+                    Toast.makeText(requireContext(), "Prediction: $label (Confidence: ${"%.2f".format(confidence)})", Toast.LENGTH_LONG).show()
+                }
+
+            } catch (e: Exception) {
+                launch(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+
+    private fun requestPermissionsAndLaunchCamera() {
+        val permissionsNeeded = arrayOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+
+        val notGranted = permissionsNeeded.filter {
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (notGranted.isEmpty()) openCamera()
+        else permissionLauncher.launch(permissionsNeeded)
+    }
+
+
+
+    private fun openCamera() {
+        val photoFile = File.createTempFile("camera_img", ".jpg", requireContext().cacheDir).apply {
+            createNewFile()
+            deleteOnExit()
+        }
+        imageUri = FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.provider",
+            photoFile
+        )
+        imageUri?.let { uri ->
+            cameraLauncher.launch(uri)
+        }
+    }
+
+    private fun getUserLocation() {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    val lat = it.latitude
+                    val lon = it.longitude
+                    Toast.makeText(requireContext(), "Lat: $lat, Lon: $lon", Toast.LENGTH_LONG).show()
+                } ?: run {
+                    Toast.makeText(requireContext(), "Location unavailable", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
 }

@@ -22,7 +22,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:mapbox_locationComponentEnabled="true"
-            app:mapbox_locationComponentPuckBearing="heading" />
+            app:mapbox_locationComponentPuckBearing="heading" >
+
+        </com.mapbox.maps.MapView>
     </LinearLayout>
 
     <Button
@@ -33,4 +35,12 @@
         android:src="@android:drawable/ic_menu_directions"
         android:text="Safe Routes"
         android:contentDescription="Safe Routes"/>
+
+    <Button
+        android:id="@+id/hazard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="hazard test"
+        android:layout_gravity="bottom"/>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

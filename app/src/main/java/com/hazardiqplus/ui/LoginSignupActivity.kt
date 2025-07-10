@@ -167,9 +167,6 @@ class LoginSignupActivity : AppCompatActivity() {
                 val token = result.token
                 if (token != null) {
                     checkUserRoleAndRedirect(token)
-                } else {
-                    startActivity(Intent(this, RoleSelectionActivity::class.java))
-                    finish()
                 }
             }
 
