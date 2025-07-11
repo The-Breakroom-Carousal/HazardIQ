@@ -66,18 +66,18 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private lateinit var btnSafeRoutes: Button
     private lateinit var hazardDetector: Button
     val labels = arrayOf(
-        "Water_Disaster",                     // 0
-        "Non_Damaged_Wildlife_Forest",       // 1
-        "Non_Damaged_sea",                   // 2
-        "Non_Damaged_Buildings_Street",      // 3
-        "Non_Damaged_human",                 // 4
-        "Damaged_Infrastructure",            // 5
-        "Earthquake",                        // 6
-        "Human_Damage",                      // 7
-        "Urban_Fire",                        // 8
-        "Wild_Fire",                         // 9
-        "Land_Slide",                        // 10
-        "Drought"                            // 11
+        "Water_Disaster",
+        "Non_Damaged_Wildlife_Forest",
+        "Non_Damaged_sea",
+        "Non_Damaged_Buildings_Street",
+        "Non_Damaged_human",
+        "Damaged_Infrastructure",
+        "Earthquake",
+        "Human_Damage",
+        "Urban_Fire",
+        "Wild_Fire",
+        "Land_Slide",
+        "Drought"
     )
 
     private lateinit var cameraLauncher: ActivityResultLauncher<Uri>
@@ -92,11 +92,12 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     "Location permission is required to show your location on the map.",
                     Toast.LENGTH_SHORT
                 ).show()
+                checkLocationPermissionAndLoad()
             }
         }
     private var change = false
     private val onIndicatorBearingChangedListener = OnIndicatorBearingChangedListener {
-        mapView.mapboxMap.setCamera(CameraOptions.Builder().bearing(it).build())
+        if (!change) mapView.mapboxMap.setCamera(CameraOptions.Builder().bearing(it).build())
     }
     private val onIndicatorPositionChangedListener = OnIndicatorPositionChangedListener {
         if (!change) {
@@ -116,8 +117,8 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         tvCityName = view.findViewById(R.id.tvCityName)
         mapView = view.findViewById(R.id.mapView)
         btnSafeRoutes = view.findViewById(R.id.btnSafeRoutes)
-        mapView.location.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
         mapView.location.addOnIndicatorBearingChangedListener(onIndicatorBearingChangedListener)
+        mapView.location.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
         hazardDetector=view.findViewById(R.id.hazard)
 
         permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
