@@ -57,35 +57,38 @@ dependencies {
     implementation(libs.tensorflow.lite.support)
     implementation(libs.tensorflow.lite.metadata)
     implementation(libs.tensorflow.lite.gpu)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.fragment)
+    implementation(libs.androidx.legacy.support.v4)
+    implementation(libs.androidx.viewpager2)
+    implementation(libs.androidx.cardview)
+    implementation(libs.androidx.gridlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation("androidx.lifecycle:lifecycle-common:2.9.1")
 
-    implementation("com.mapbox.maps:android:11.13.1")
-    implementation("com.google.android.material:material:1.9.0")
-    implementation("com.airbnb.android:lottie:6.3.0")
-    implementation("androidx.core:core-ktx:1.10.0")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
-    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation ("com.squareup.retrofit2:converter-gson:3.0.0")
 
     //lottie animation
-    implementation("com.airbnb.android:lottie:6.3.0")
+    implementation("com.airbnb.android:lottie:6.6.7")
 
     //tflite
-    implementation("org.tensorflow:tensorflow-lite:2.13.0")
-    implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
-    // Firebase dependencies (without version numbers!)
-    implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
+    implementation("org.tensorflow:tensorflow-lite:2.17.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
 
-    // ✅ Firebase dependencies (no version numbers)
+    // Firebase dependencies (without version numbers!)
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+
+    //Firebase dependencies (no version numbers)
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
-    implementation("com.google.android.gms:play-services-location:21.0.1")
     //mapbox
     implementation("com.mapbox.maps:android:11.13.1")
     implementation("com.mapbox.mapboxsdk:mapbox-sdk-services:5.8.0")
