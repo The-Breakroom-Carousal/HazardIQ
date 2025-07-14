@@ -3,7 +3,7 @@ services:
     name: aqi-api
     env: python
     rootDir: AQI_Predictors
-    buildCommand: cd AQI_Predictors && pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
     envVars:
       - key: PYTHON_VERSION
