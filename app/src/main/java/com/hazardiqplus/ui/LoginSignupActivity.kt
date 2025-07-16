@@ -2,19 +2,26 @@ package com.hazardiqplus.ui
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.hazardiqplus.R
@@ -37,6 +44,17 @@ class LoginSignupActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login_signup)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.loginMain)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottomSheet)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+            insets
+        }
+
         firebaseAuth = FirebaseAuth.getInstance()
         val signup =findViewById<TextView>(R.id.textView)
         val Sgnbtn =findViewById<Button>(R.id.sgninbutton)
@@ -47,8 +65,32 @@ class LoginSignupActivity : AppCompatActivity() {
         checkAndRequestPermission()
 
         fgtpass.setOnClickListener{
-            val intent = Intent(this, ForgotPassword::class.java)
-            startActivity(intent)
+            val textInputView = View.inflate(this, R.layout.dialouge_text_input, null)
+            val input = textInputView.findViewById<TextInputEditText>(R.id.textInput)
+            input.hint = "Enter your email"
+
+            val dialog = MaterialAlertDialogBuilder(this)
+                .setTitle("Forgot Password?")
+                .setView(textInputView)
+                .setPositiveButton("Send reset mail", null)
+                .setNegativeButton("Cancel", null)
+                .create()
+
+            dialog.show()
+
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val newText = input.text.toString().trim()
+                if (newText.isNotBlank()) {
+                    if (Patterns.EMAIL_ADDRESS.matcher(newText).matches()) {
+                        resetPassword(newText)
+                        dialog.dismiss()
+                    } else {
+                        input.error = "Enter a valid email address"
+                    }
+                } else {
+                    input.error = "Email cannot be empty"
+                }
+            }
         }
 
         val googlesgn=findViewById<Button>(R.id.sign_in_button)
@@ -87,7 +129,6 @@ class LoginSignupActivity : AppCompatActivity() {
                                     finish()
                                 }
                             }
-
                     } else {
                         Toast.makeText(this, "Invalid Email or Password !", Toast.LENGTH_SHORT).show()
                     }
@@ -192,28 +233,26 @@ class LoginSignupActivity : AppCompatActivity() {
     }
 
     private fun checkAndRequestPermission(){
-        val locationPermissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (!granted) {
-                Toast.makeText(
-                    this,
-                    "Location permission is required to show your location on the map.",
-                    Toast.LENGTH_SHORT
-                ).show()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+                checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(
+                        Manifest.permission.POST_NOTIFICATIONS,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ), 101
+                )
             }
         }
-        locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val notificationPermissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-                if (!granted) {
-                    Toast.makeText(
-                        this,
-                        "Notification permission is required to send notifications.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+    private fun resetPassword(email: String) {
+        firebaseAuth.sendPasswordResetEmail(email).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Toast.makeText(this, "Password reset email sent", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Failed to send password reset email", Toast.LENGTH_SHORT).show()
             }
-            notificationPermissionRequest.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }

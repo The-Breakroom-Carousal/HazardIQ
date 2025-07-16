@@ -30,8 +30,6 @@ class ForgotPassword : AppCompatActivity() {
                         Toast.makeText(this, "Failed to send password reset email", Toast.LENGTH_SHORT).show()
                     }
                 }
-
-
             }
         }
     }

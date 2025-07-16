@@ -34,7 +34,6 @@ class RoleSelectionActivity : AppCompatActivity() {
     private lateinit var firstName: TextInputEditText
     private lateinit var lastName: TextInputEditText
     private lateinit var emailInput: TextInputEditText
-
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var currentLat: Double? = null
     private var currentLng: Double? = null

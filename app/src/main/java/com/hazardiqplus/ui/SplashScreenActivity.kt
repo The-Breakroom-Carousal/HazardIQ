@@ -1,7 +1,9 @@
 package com.hazardiqplus.ui
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
@@ -19,14 +21,21 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class Splash_Screen : AppCompatActivity() {
+@SuppressLint("CustomSplashScreen")
+class SplashScreenActivity : AppCompatActivity() {
     private lateinit var firebaseAuth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_splash_screen)
-        val handler = android.os.Handler(Looper.getMainLooper())
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.appNameText)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            insets
+        }
 
+        val handler = Handler(Looper.getMainLooper())
         handler.postDelayed( {
             firebaseAuth = FirebaseAuth.getInstance()
             if (firebaseAuth.currentUser != null) {
@@ -37,13 +46,10 @@ class Splash_Screen : AppCompatActivity() {
                             checkUserRoleAndRedirect(token)
                         }
                     }
-            }
-
-            else{
+            } else{
                 startActivity(Intent(this, LoginSignupActivity::class.java))
                 finish()
             }
-
         },3000)
 
     }
@@ -54,20 +60,20 @@ class Splash_Screen : AppCompatActivity() {
 
                 Log.d("DEBUG", "Response JSON: ${response.body()}")
                 val role = response.body()?.role
-                Toast.makeText(this@Splash_Screen, "Role: $role", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SplashScreenActivity, "Role: $role", Toast.LENGTH_SHORT).show()
                 when (role?.lowercase()) {
-                    "citizen" -> startActivity(Intent(this@Splash_Screen, CitizenMainActivity::class.java))
-                    "responder" -> startActivity(Intent(this@Splash_Screen, ResponderMainActivity::class.java))
-                    "admin" -> Toast.makeText(this@Splash_Screen, "Admin not implemented", Toast.LENGTH_SHORT).show()
-                    else -> startActivity(Intent(this@Splash_Screen, RoleSelectionActivity::class.java))
+                    "citizen" -> startActivity(Intent(this@SplashScreenActivity, CitizenMainActivity::class.java))
+                    "responder" -> startActivity(Intent(this@SplashScreenActivity, ResponderMainActivity::class.java))
+                    "admin" -> Toast.makeText(this@SplashScreenActivity, "Admin not implemented", Toast.LENGTH_SHORT).show()
+                    else -> startActivity(Intent(this@SplashScreenActivity, RoleSelectionActivity::class.java))
                 }
 
                 finish()
             }
 
             override fun onFailure(call: Call<User>, t: Throwable) {
-                Toast.makeText(this@Splash_Screen, "Error verifying role", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this@Splash_Screen, RoleSelectionActivity::class.java))
+                Toast.makeText(this@SplashScreenActivity, "Error verifying role", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@SplashScreenActivity, RoleSelectionActivity::class.java))
                 finish()
             }
         })

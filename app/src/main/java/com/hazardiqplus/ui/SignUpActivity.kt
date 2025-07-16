@@ -18,7 +18,6 @@ class SignUpActivity : AppCompatActivity() {
 
     private lateinit var firebaseAuth: FirebaseAuth
 
-    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up)
@@ -42,7 +41,6 @@ class SignUpActivity : AppCompatActivity() {
 
             if (email.isNotEmpty() && pass.isNotEmpty() && confirmPass.isNotEmpty()) {
                 if (pass == confirmPass) {
-                    // Validate password strength
                     if (pass.length < 6) {
                         Toast.makeText(this, "Password must be at least 6 characters long", Toast.LENGTH_SHORT).show()
                         return@setOnClickListener
@@ -51,7 +49,7 @@ class SignUpActivity : AppCompatActivity() {
                     firebaseAuth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener {
                         if (it.isSuccessful) {
                             Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show()
-                            val intent = Intent(this, LoginSignupActivity::class.java)
+                            val intent = Intent(this, RoleSelectionActivity::class.java)
                             startActivity(intent)
                         } else {
                             handleFirebaseError(it.exception)

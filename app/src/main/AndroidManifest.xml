@@ -23,7 +23,7 @@
         android:theme="@style/Theme.HazardIQ"
         tools:targetApi="31">
         <activity
-            android:name=".ui.Splash_Screen"
+            android:name=".ui.SplashScreenActivity"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
