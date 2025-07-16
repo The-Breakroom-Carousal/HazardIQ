@@ -12,7 +12,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -49,7 +48,7 @@ class LoginSignupActivity : AppCompatActivity() {
             view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottomSheet)) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.loginBottomSheet)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
             insets

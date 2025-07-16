@@ -33,7 +33,7 @@
             app:layout_constraintGuide_percent="0.25" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/bottomSheet"
+            android:id="@+id/loginBottomSheet"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:background="@drawable/login_background"
