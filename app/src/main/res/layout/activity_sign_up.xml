@@ -152,13 +152,11 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:padding="10dp"
                 android:text=" Already Registered?\n Sign In!"
                 android:textColor="@color/md_theme_primary"
                 android:textSize="20sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/linearLayout2" />
         </androidx.constraintlayout.widget.ConstraintLayout>
