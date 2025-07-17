@@ -11,12 +11,10 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- Top Padding -->
         <View
             android:layout_width="match_parent"
             android:layout_height="32dp" />
 
-        <!-- Welcome Message Block -->
         <TextView
             android:id="@+id/welcomeSubtitle"
             android:layout_width="wrap_content"
@@ -110,7 +108,6 @@
                 android:textColor="#000000" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Continue Button -->
         <Button
             android:id="@+id/continueButton"
             android:layout_width="match_parent"

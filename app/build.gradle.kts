@@ -92,4 +92,7 @@ dependencies {
     //mapbox
     implementation("com.mapbox.maps:android:11.13.1")
     implementation("com.mapbox.mapboxsdk:mapbox-sdk-services:5.8.0")
+
+    //splashscreen
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
