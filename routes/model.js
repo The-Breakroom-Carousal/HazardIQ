@@ -38,7 +38,7 @@ async function fetchPollutionData(city, delayHours) {
       params: {
         city,
         date_from: isoTime,
-        limit: 2,
+        limit: 10,
         parameter: ['pm25', 'pm10'],
         sort: 'desc'
       },
@@ -96,14 +96,7 @@ async function callPredictAPI(input) {
       'https://hazardiq.onrender.com/predict',
       {
         state: input.state,
-        features: {
-          ...input.features,
-          city: input.features.city,
-          'PM2.5 (µg/m³)_delay1': input.features['PM2.5 (µg/m³)_delay1'],
-          'PM2.5 (µg/m³)_delay2': input.features['PM2.5 (µg/m³)_delay2'],
-          'PM10 (µg/m³)_delay1': input.features['PM10 (µg/m³)_delay1'],
-          'PM10 (µg/m³)_delay2': input.features['PM10 (µg/m³)_delay2']
-        }
+        features: input.features
       },
       {
         headers: {
@@ -175,14 +168,12 @@ router.post('/predict-air-quality', async (req, res) => {
         AQI: calculateAQI(PM25, PM10)
       });
 
-      // Update for next iteration
       pm25_2 = pm25_1;
       pm25_1 = PM25;
       pm10_2 = pm10_1;
       pm10_1 = PM10;
     }
 
-    // Database insert
     await pool.query(
       `INSERT INTO air_quality_predictions 
        (city, state, latitude, longitude, pm25_prediction, pm10_prediction)
@@ -210,13 +201,13 @@ router.get('/aqi-nearby', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT * FROM air_quality_predictions
-      WHERE earth_distance(ll_to_earth($1, $2), ll_to_earth(latitude, longitude)) < $3 * 1000
+      WHERE earth_distance(ll_to_earth($1::float8, $2::float8), ll_to_earth(latitude, longitude)) < $3::float8 * 1000
       ORDER BY timestamp DESC LIMIT 50
     `, [lat, lon, radius]);
 
     res.json({ success: true, data: result.rows });
   } catch (err) {
-    console.error('Database Error:', err);
+    console.error('Database Error:', err.message);
     res.status(500).json({ error: 'Failed to fetch nearby data' });
   }
 });
