@@ -16,6 +16,40 @@ const config = {
   }
 };
 
+const supportedCities = {
+  "andhrapradesh": ["amravati", "anantapur", "chittoor", "kadapa", "rajamahendravaram", "tirupati", "vijayawada", "visakhapatnam"],
+  "arunachalpradesh": ["naharlagun"],
+  "assam": ["guwahati", "nagaon", "nalbari", "silchar"],
+  "bihar": ["araria", "arrah", "aurangabad", "begusarai", "bettiah", "bhagalpur", "chhapra", "gaya", "patna"],
+  "chandigarh": ["chandigarh"],
+  "chhattisgarh": ["bhilai", "bilaspur", "chhal", "korba", "milupara", "raipur"],
+  "delhi": ["delhi"],
+  "gujarat": ["ahmedabad", "ankleshwar", "gandhinagar", "nandesari", "surat", "vapi"],
+  "haryana": ["ambala", "bahadurgarh", "ballabgarh", "bhiwani", "faridabad", "fatehabad", "gurugram", "panipat", "sirsa", "sonipat"],
+  "himachalpradesh": ["baddi"],
+  "jk": ["srinagar"],
+  "jharkhand": ["dhanbad"],
+  "karnataka": ["bengaluru", "belgaum", "dharwad", "mangalore", "mysuru", "ramanagara", "udupi", "vijayapura"],
+  "kerala": ["kannur", "thiruvananthapuram", "thrissur"],
+  "madhyapradesh": ["bhopal", "dewas", "gwalior", "indore", "ratlam", "ujjain"],
+  "maharashtra": ["aurangabad", "amravati", "chandrapur", "mumbai", "nagpur", "nashik", "navimumbai", "pune"],
+  "manipur": ["imphal"],
+  "meghalaya": ["shillong"],
+  "mizoram": ["aizawl"],
+  "nagaland": ["kohima"],
+  "odisha": ["angul", "balasore", "bhubaneswar", "cuttack", "rourkela", "suakati"],
+  "puducherry": ["puducherry"],
+  "punjab": ["amritsar", "bathinda", "jalandhar", "khanna", "ludhiana", "patiala", "rupnagar"],
+  "rajasthan": ["ajmer", "alwar", "bikaner", "jaipur", "jaisalmer", "kota", "sikar"],
+  "sikkim": ["gangtok"],
+  "tamilnadu": ["chennai", "coimbatore", "ooty", "ramanathapuram", "vellore"],
+  "telangana": ["hyderabad"],
+  "tripura": ["agartala"],
+  "uttarpradesh": ["agra", "kanpur", "lucknow", "varanasi", "vrindavan"],
+  "uttarakhand": ["dehradun", "kashipur", "rishikesh"],
+  "westbengal": ["asansol", "kolkata", "siliguri"]
+};
+
 // Middleware
 router.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
@@ -119,6 +153,14 @@ router.post('/predict-air-quality', async (req, res) => {
   if (!city || !state || isNaN(lat) || isNaN(lon)) {
     return res.status(400).json({ 
       error: 'Missing required fields: city, state, lat, lon' 
+    });
+  }
+
+  if (!supportedCities[state]?.includes(city)) {
+    return res.status(400).json({
+      error: 'Unsupported location',
+      message: `Predictions not available for ${city}, ${state}`,
+      supportedCities: supportedCities[state] || []
     });
   }
 
