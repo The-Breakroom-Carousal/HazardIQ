@@ -12,7 +12,7 @@ const config = {
   cacheTTL: process.env.CACHE_TTL || 3600,
   maxPredictionHours: 24,
   openMeteo: {
-    baseUrl: process.env.OPEN_METEO_URL || 'https://api.open-meteo.com/v1'
+    baseUrl: 'https://air-quality-api.open-meteo.com/v1'
   }
 };
 
@@ -25,40 +25,30 @@ router.use(cors({
 const cache = new NodeCache({ stdTTL: config.cacheTTL });
 
 // Helper Functions
-async function fetchPollutionData(city, delayHours) {
-  const cacheKey = `${city}_pollution_${delayHours}h`;
+async function fetchPollutionData(lat, lon, delayHours) {
+  const cacheKey = `pollution_${lat}_${lon}_${delayHours}h`;
   if (cache.has(cacheKey)) return cache.get(cacheKey);
 
-  const now = new Date();
-  const pastTime = new Date(now.getTime() - delayHours * 60 * 60 * 1000);
-  const isoTime = pastTime.toISOString();
-
   try {
-    const res = await axios.get('https://api.openaq.org/v3/measurements', {
-      params: {
-        city,
-        date_from: isoTime,
-        limit: 10,
-        parameter: ['pm25', 'pm10'],
-        sort: 'desc'
-      },
-      headers: {
-        'X-API-Key': process.env.OPENAQ_API_KEY
-      }
-    });
+    const now = new Date();
+    const targetHour = new Date(now.getTime() - delayHours * 60 * 60 * 1000);
+    const targetHourISO = targetHour.toISOString().slice(0, 13); // YYYY-MM-DDTHH
 
-    const pm25Data = res.data.results.find(r => r.parameter === 'pm25');
-    const pm10Data = res.data.results.find(r => r.parameter === 'pm10');
+    const url = `${config.openMeteo.baseUrl}/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm10,pm2_5&timezone=auto`;
+    const res = await axios.get(url);
+
+    const { time, pm10, pm2_5 } = res.data.hourly;
+    const index = time.findIndex(t => t.startsWith(targetHourISO));
 
     const data = {
-      pm25: pm25Data?.value || 0,
-      pm10: pm10Data?.value || 0
+      pm25: index !== -1 ? pm2_5[index] : 0,
+      pm10: index !== -1 ? pm10[index] : 0
     };
 
     cache.set(cacheKey, data);
     return data;
   } catch (err) {
-    console.error(`OpenAQ Error for ${city}:`, err.response?.data || err.message);
+    console.error(`Open-Meteo AQI Error:`, err.response?.data || err.message);
     return { pm25: 0, pm10: 0 };
   }
 }
@@ -68,7 +58,7 @@ async function fetchWeatherData(lat, lon) {
   if (cache.has(cacheKey)) return cache.get(cacheKey);
 
   try {
-    const url = `${config.openMeteo.baseUrl}/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,rain,surface_pressure,wind_speed_10m,wind_direction_10m,wind_speed_100m,wind_direction_100m`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,rain,surface_pressure,wind_speed_10m,wind_direction_10m,wind_speed_100m,wind_direction_100m`;
     const res = await axios.get(url);
 
     const weather = {
@@ -134,8 +124,8 @@ router.post('/predict-air-quality', async (req, res) => {
 
   try {
     const [delay1, delay2, weather] = await Promise.all([
-      fetchPollutionData(city, 1),
-      fetchPollutionData(city, 2),
+      fetchPollutionData(lat, lon, 1),
+      fetchPollutionData(lat, lon, 2),
       fetchWeatherData(lat, lon)
     ]);
 
@@ -183,17 +173,18 @@ router.post('/predict-air-quality', async (req, res) => {
 
     res.json({ success: true, predictions });
   } catch (err) {
-    console.error('Prediction Error:', err.message);
+    console.error('Prediction Error:', err.message, err.stack);
     res.status(500).json({ 
       error: 'Prediction failed',
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      details: err.message,
+      stack: err.stack
     });
   }
 });
 
 router.get('/aqi-nearby', async (req, res) => {
   const { lat, lon, radius = 10 } = req.query;
-  
+
   if (isNaN(lat) || isNaN(lon)) {
     return res.status(400).json({ error: 'Invalid coordinates' });
   }
