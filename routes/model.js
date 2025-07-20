@@ -1,7 +1,7 @@
 // routes/predict.js
 const express = require('express');
 const router = express.Router();
-const axios = require('axios').create({ timeout: 5000 });
+const axios = require('axios').create({ timeout: 30000 });
 const NodeCache = require('node-cache');
 const cors = require('cors');
 const pool = require('../db');
@@ -17,38 +17,39 @@ const config = {
 };
 
 const supportedCities = {
-  "andhrapradesh": ["amravati", "anantapur", "chittoor", "kadapa", "rajamahendravaram", "tirupati", "vijayawada", "visakhapatnam"],
-  "arunachalpradesh": ["naharlagun"],
-  "assam": ["guwahati", "nagaon", "nalbari", "silchar"],
-  "bihar": ["araria", "arrah", "aurangabad", "begusarai", "bettiah", "bhagalpur", "chhapra", "gaya", "patna"],
-  "chandigarh": ["chandigarh"],
-  "chhattisgarh": ["bhilai", "bilaspur", "chhal", "korba", "milupara", "raipur"],
-  "delhi": ["delhi"],
-  "gujarat": ["ahmedabad", "ankleshwar", "gandhinagar", "nandesari", "surat", "vapi"],
-  "haryana": ["ambala", "bahadurgarh", "ballabgarh", "bhiwani", "faridabad", "fatehabad", "gurugram", "panipat", "sirsa", "sonipat"],
-  "himachalpradesh": ["baddi"],
-  "jk": ["srinagar"],
-  "jharkhand": ["dhanbad"],
-  "karnataka": ["bengaluru", "belgaum", "dharwad", "mangalore", "mysuru", "ramanagara", "udupi", "vijayapura"],
-  "kerala": ["kannur", "thiruvananthapuram", "thrissur"],
-  "madhyapradesh": ["bhopal", "dewas", "gwalior", "indore", "ratlam", "ujjain"],
-  "maharashtra": ["aurangabad", "amravati", "chandrapur", "mumbai", "nagpur", "nashik", "navimumbai", "pune"],
-  "manipur": ["imphal"],
-  "meghalaya": ["shillong"],
-  "mizoram": ["aizawl"],
-  "nagaland": ["kohima"],
-  "odisha": ["angul", "balasore", "bhubaneswar", "cuttack", "rourkela", "suakati"],
-  "puducherry": ["puducherry"],
-  "punjab": ["amritsar", "bathinda", "jalandhar", "khanna", "ludhiana", "patiala", "rupnagar"],
-  "rajasthan": ["ajmer", "alwar", "bikaner", "jaipur", "jaisalmer", "kota", "sikar"],
-  "sikkim": ["gangtok"],
-  "tamilnadu": ["chennai", "coimbatore", "ooty", "ramanathapuram", "vellore"],
-  "telangana": ["hyderabad"],
-  "tripura": ["agartala"],
-  "uttarpradesh": ["agra", "kanpur", "lucknow", "varanasi", "vrindavan"],
-  "uttarakhand": ["dehradun", "kashipur", "rishikesh"],
-  "westbengal": ["asansol", "kolkata", "siliguri"]
-};
+  "AndhraPradesh": ["Amravati", "Anantapur", "Chittoor", "Kadapa", "Rajamahendravaram", "Tirupati", "Vijayawada", "Visakhapatnam"],
+  "ArunachalPradesh": ["Naharlagun"],
+  "Assam": ["Guwahati", "Nagaon", "Nalbari", "Silchar"],
+  "Bihar": ["Araria", "Arrah", "Aurangabad", "Begusarai", "Bettiah", "Bhagalpur", "Chhapra", "Gaya", "Patna"],
+  "Chandigarh": ["Chandigarh"],
+  "Chattisgarh": ["Bhilai", "Bilaspur", "Chhal", "Korba", "Milupara", "Raipur"],
+  "Delhi": ["Delhi"],
+  "Gujarat": ["Ahmedabad", "Ankleshwar", "Gandhinagar", "Nandesari", "Surat", "Vapi"],
+  "Haryana": ["Ambala", "Bahadurgarh", "Ballabgarh", "Bhiwani", "Faridabad", "Fatehabad", "Gurugram", "Panipat", "Sirsa", "Sonipat"],
+  "HimachalPradesh": ["Baddi"],
+  "JK": ["Srinagar"],
+  "Jharkhand": ["Dhanbad"],
+  "Karnataka": ["Bengaluru", "Belgaum", "Dharwad", "Mangalore", "Mysuru", "Ramanagara", "Udupi", "Vijayapura"],
+  "Kerala": ["Kannur", "Thiruvananthapuram", "Thrissur"],
+  "MadhyaPradesh": ["Bhopal", "Dewas", "Gwalior", "Indore", "Ratlam", "Ujjain"],
+  "Maharashtra": ["Aurangabad", "Amravati", "Chandrapur", "Mumbai", "Nagpur", "Nashik", "Navimumbai", "Pune"],
+  "Manipur": ["Imphal"],
+  "Meghalaya": ["Shillong"],
+  "Mizoram": ["Aizawl"],
+  "Nagaland": ["Kohima"],
+  "Odisha": ["Angul", "Balasore", "Bhubaneswar", "Cuttack", "Rourkela", "Suakati"],
+  "Puducherry": ["Puducherry"],
+  "Punjab": ["Amritsar", "Bathinda", "Jalandhar", "Khanna", "Ludhiana", "Patiala", "Rupnagar"],
+  "Rajasthan": ["Ajmer", "Alwar", "Bikaner", "Jaipur", "Jaisalmer", "Kota", "Sikar"],
+  "Sikkim": ["Gangtok"],
+  "TamilNadu": ["Chennai", "Coimbatore", "Ooty", "Ramanathapuram", "Vellore"],
+  "Telangana": ["Hyderabad"],
+  "Tripura": ["Agartala"],
+  "UttarPradesh": ["Agra", "Kanpur", "Lucknow", "Varanasi", "Vrindavan"],
+  "Uttarakhand": ["Dehradun", "Kashipur", "Rishikesh"],
+  "WestBengal": ["Asansol", "Kolkata", "Siliguri"]
+}
+;
 
 // Middleware
 router.use(cors({
