@@ -1,8 +1,13 @@
 package com.hazardiqplus.ui.citizen.fragments.home
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
@@ -11,9 +16,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import kotlin.math.pow
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.SeekBar
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -25,8 +32,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.LocationServices
 import com.hazardiqplus.R
+import com.hazardiqplus.clients.AirQualityApiClient
 import com.hazardiqplus.clients.CityModelMapper
 import com.hazardiqplus.clients.RetrofitClient
+import com.hazardiqplus.clients.WeatherApiClient
+import com.hazardiqplus.data.CityPoint
 import com.hazardiqplus.data.NearbyAQIResponse
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
@@ -43,6 +53,7 @@ import kotlin.math.sqrt as kSqrt
 import kotlin.math.atan2 as kAtan2
 import kotlin.math.pow as kPow
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
+import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.circleLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
@@ -63,9 +74,8 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.atan2
-
 class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     // UI Components
@@ -75,6 +85,9 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private lateinit var hazardDetector: Button
     private lateinit var rangeSeekBar: SeekBar
     private lateinit var rangeText: TextView
+    private lateinit var optionSelector: Spinner
+    private enum class ViewMode { CURRENT_AQI, FORECAST, WEATHER, HAZARD }
+    private var currentViewMode = ViewMode.CURRENT_AQI
 
     // Camera and permissions
     private lateinit var cameraLauncher: ActivityResultLauncher<Uri>
@@ -85,12 +98,51 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private var currentLat: Double? = null
     private var currentLon: Double? = null
 
+    data class AQIData(val pm25: Double, val pm10: Double)
+    private data class WeatherData(
+        val temperature: Double,
+        val weatherCode: Int,
+        val weatherCondition: String,
+        val windSpeed: Double,
+        val humidity: Double
+    )
     // ML Model labels
     private val labels = listOf(
         "Water_Disaster", "Non_Damaged_Wildlife_Forest", "Non_Damaged_sea",
         "Non_Damaged_Buildings_Street", "Non_Damaged_human", "Damaged_Infrastructure",
         "Earthquake", "Human_Damage", "Urban_Fire", "Wild_Fire", "Land_Slide", "Drought"
     )
+
+    private val cityCapitals = listOf(
+        CityPoint("Delhi", 28.6139, 77.2090),
+        CityPoint("Mumbai", 19.0760, 72.8777),
+        CityPoint("Chennai", 13.0827, 80.2707),
+        CityPoint("Kolkata", 22.5726, 88.3639),
+        CityPoint("Bengaluru", 12.9716, 77.5946),
+        CityPoint("Hyderabad", 17.3850, 78.4867),
+        CityPoint("Ahmedabad", 23.0225, 72.5714),
+        CityPoint("Jaipur", 26.9124, 75.7873),
+        CityPoint("Bhopal", 23.2599, 77.4126),
+        CityPoint("Lucknow", 26.8467, 80.9462),
+        CityPoint("Patna", 25.5941, 85.1376),
+        CityPoint("Thiruvananthapuram", 8.5241, 76.9366),
+        CityPoint("Raipur", 21.2514, 81.6296),
+        CityPoint("Bhubaneswar", 20.2961, 85.8245),
+        CityPoint("Dispur", 26.1445, 91.7362),
+        CityPoint("Ranchi", 23.3441, 85.3096),
+        CityPoint("Imphal", 24.8170, 93.9368),
+        CityPoint("Shillong", 25.5788, 91.8933),
+        CityPoint("Aizawl", 23.7271, 92.7176),
+        CityPoint("Kohima", 25.6701, 94.1077),
+        CityPoint("Agartala", 23.8315, 91.2868),
+        CityPoint("Itanagar", 27.0844, 93.6053),
+        CityPoint("Gangtok", 27.3314, 88.6138),
+        CityPoint("Panaji", 15.4909, 73.8278),
+        CityPoint("Shimla", 31.1048, 77.1734),
+        CityPoint("Dehradun", 30.3165, 78.0322),
+        CityPoint("Chandigarh", 30.7333, 76.7794)
+    )
+
 
     // Permission requests
     private val requiredPermissions = arrayOf(
@@ -120,7 +172,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
             updateMapCamera(point)
             updateCityName(lat, lon)
-            fetchNearbyAQI(rangeSeekBar.progress)
+            refreshCurrentView()
         }
     }
 
@@ -131,6 +183,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     ): View {
         val view = inflater.inflate(R.layout.fragment_citizen_home, container, false)
         initViews(view)
+        setupSpinner(view)
         setupCameraLauncher()
         setupPermissions()
         setupMap()
@@ -138,6 +191,455 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         checkLocationPermission()
         return view
     }
+
+    private fun setupSpinner(view: View) {
+        optionSelector = view.findViewById(R.id.optionSpinner)
+        ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.aqi_options,
+            android.R.layout.simple_spinner_item
+        ).also { adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            optionSelector.adapter = adapter
+        }
+
+        optionSelector.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                currentViewMode = when (position) {
+                    0 -> ViewMode.CURRENT_AQI
+                    1 -> ViewMode.FORECAST
+                    2 -> ViewMode.WEATHER
+                    3 -> ViewMode.HAZARD
+                    else -> ViewMode.CURRENT_AQI
+                }
+                refreshCurrentView()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+    }
+
+    private fun refreshCurrentView() {
+        when (currentViewMode) {
+            ViewMode.CURRENT_AQI -> loadCurrentAQI()
+            ViewMode.FORECAST -> loadForecast()
+            ViewMode.WEATHER -> loadWeather()
+            ViewMode.HAZARD -> loadHazardMap()
+        }
+    }
+
+    private fun loadCurrentAQI() {
+        clearMap()
+        currentLat?.let { lat ->
+            currentLon?.let { lon ->
+                // First center the map on user location
+                mapView.mapboxMap.setCamera(
+                    CameraOptions.Builder()
+                        .center(Point.fromLngLat(lon, lat))
+                        .zoom(10.0) // Adjust zoom level as needed
+                        .build()
+                )
+
+                // Then load AQI for user location
+                fetchNearbyAQI(rangeSeekBar.progress)
+
+                // Load AQI for capital cities
+                    lifecycleScope.launch {
+                        try {
+                            val features = mutableListOf<Feature>()
+                            for ((city, cityLat, cityLon) in cityCapitals) {
+                                val aqiData = getLiveAQIData(cityLat, cityLon)
+                                val aqiValue = calculateAQI(aqiData.pm25, aqiData.pm10)
+
+                                val feature = Feature.fromGeometry(Point.fromLngLat(cityLon, cityLat))
+                                feature.addNumberProperty("aqi", aqiValue)
+                                feature.addStringProperty("label", "$city AQI: $aqiValue")
+                                features.add(feature)
+                            }
+                            updateMapFeatures(features, "aqi-layer", "aqi-source")
+
+                            // Ensure map stays centered after loading features
+                            mapView.mapboxMap.setCamera(
+                                CameraOptions.Builder()
+                                    .center(Point.fromLngLat(lon, lat))
+                                    .zoom(10.0)
+                                    .build()
+                            )
+                        } catch (e: Exception) {
+                            Log.e("CurrentAQI", "Failed to load capital cities AQI", e)
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun updateMapFeatures(features: List<Feature>, layerId: String, sourceId: String) {
+        mapView.mapboxMap.getStyle { style ->
+            val featureCollection = FeatureCollection.fromFeatures(features)
+
+            // Remove existing layer and source if they exist
+            if (style.styleManager.styleSourceExists(sourceId)) {
+                style.removeStyleSource(sourceId)
+            }
+            if (style.styleManager.styleLayerExists(layerId)) {
+                style.removeStyleLayer(layerId)
+            }
+
+            // Add the new source
+            style.addSource(geoJsonSource(sourceId) {
+                featureCollection(featureCollection)
+            })
+
+            // Add the appropriate layer based on view mode
+            when (currentViewMode) {
+                ViewMode.CURRENT_AQI, ViewMode.FORECAST -> {
+                    // AQI visualization (circles with color scale)
+                    style.addLayer(
+                        circleLayer(layerId, sourceId) {
+                            circleRadius(8.0)
+                            circleColor(
+                                interpolate {
+                                    linear()
+                                    get { literal("aqi") }
+                                    stop { literal(0); rgb(0.0, 255.0, 0.0) }
+                                    stop { literal(50); rgb(155.0, 255.0, 0.0) }
+                                    stop { literal(100); rgb(255.0, 255.0, 0.0) }
+                                    stop { literal(150); rgb(255.0, 126.0, 0.0) }
+                                    stop { literal(200); rgb(255.0, 0.0, 0.0) }
+                                    stop { literal(300); rgb(153.0, 0.0, 76.0) }
+                                    stop { literal(500); rgb(126.0, 0.0, 35.0) }
+                                }
+                            )
+                            circleOpacity(0.8)
+                        }
+                    )
+
+                    // Add labels for AQI points
+                    style.addLayer(
+                        symbolLayer("${layerId}-label", sourceId) {
+                            textField(Expression.get("label"))
+                            textSize(12.0)
+                            textColor("#000000")
+                            textHaloColor("#FFFFFF")
+                            textHaloWidth(1.0)
+                            textOffset(listOf(0.0, 1.5))
+                        }
+                    )
+
+                    // Center on user location or first point
+                    val centerPoint = if (currentLat != null && currentLon != null) {
+                        Point.fromLngLat(currentLon!!, currentLat!!)
+                    } else if (features.isNotEmpty()) {
+                        (features.first().geometry() as? Point) ?: Point.fromLngLat(0.0, 0.0)
+                    } else {
+                        Point.fromLngLat(0.0, 0.0)
+                    }
+
+                    mapView.mapboxMap.setCamera(
+                        CameraOptions.Builder()
+                            .center(centerPoint)
+                            .zoom(10.0) // Adjust zoom level as needed
+                            .build()
+                    )
+                }
+                // ... rest of your view mode cases
+
+
+                ViewMode.WEATHER -> {
+                    // Weather visualization (icons with temperature)
+                    style.addLayer(
+                        symbolLayer(layerId, sourceId) {
+                            iconImage(Expression.get("icon"))
+                            iconSize(1.5)
+                            textField(Expression.get("label"))
+                            textSize(12.0)
+                            textColor("#000000")
+                            textHaloColor("#FFFFFF")
+                            textHaloWidth(1.0)
+                            textOffset(listOf(0.0, 1.5))
+                        }
+                    )
+                }
+
+                ViewMode.HAZARD -> {
+                    // Hazard visualization (could be customized)
+                    style.addLayer(
+                        circleLayer(layerId, sourceId) {
+                            circleRadius(10.0)
+                            circleColor("#FF0000")
+                            circleOpacity(0.7)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun calculateAQI(pm25: Double, pm10: Double): Int {
+        // Calculate AQI based on PM2.5
+        val aqi25 = when {
+            pm25 <= 12.0 -> ((50.0/12.0) * pm25)
+            pm25 <= 35.4 -> 50 + ((50.0/(35.4-12.0)) * (pm25 - 12.0))
+            pm25 <= 55.4 -> 100 + ((50.0/(55.4-35.4)) * (pm25 - 35.4))
+            pm25 <= 150.4 -> 150 + ((100.0/(150.4-55.4)) * (pm25 - 55.4))
+            pm25 <= 250.4 -> 200 + ((100.0/(250.4-150.4)) * (pm25 - 150.4))
+            pm25 <= 350.4 -> 300 + ((100.0/(350.4-250.4)) * (pm25 - 250.4))
+            pm25 <= 500.4 -> 400 + ((100.0/(500.4-350.4)) * (pm25 - 350.4))
+            else -> 500
+        }
+
+        // Calculate AQI based on PM10
+        val aqi10 = when {
+            pm10 <= 54.0 -> pm10
+            pm10 <= 154.0 -> 50 + ((50.0/(154.0-54.0)) * (pm10 - 54.0))
+            pm10 <= 254.0 -> 100 + ((50.0/(254.0-154.0)) * (pm10 - 154.0))
+            pm10 <= 354.0 -> 150 + ((100.0/(354.0-254.0)) * (pm10 - 254.0))
+            pm10 <= 424.0 -> 200 + ((100.0/(424.0-354.0)) * (pm10 - 354.0))
+            pm10 <= 504.0 -> 300 + ((100.0/(504.0-424.0)) * (pm10 - 424.0))
+            pm10 <= 604.0 -> 400 + ((100.0/(604.0-504.0)) * (pm10 - 504.0))
+            else -> 500
+        }
+
+        // Return the higher of the two AQI values
+        return maxOf(aqi25.toInt(), aqi10.toInt())
+    }
+    private fun loadForecast() {
+        clearMap()
+        currentLat?.let { lat ->
+            currentLon?.let { lon ->
+                try {
+                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                    val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
+                    val city = address?.locality ?: "Unknown"
+                    val state = address?.adminArea ?: "Unknown"
+                    val normalizedState = CityModelMapper.normalizeStateName(state)
+                    val (modelCity, distance) = CityModelMapper.getNearestSupportedCity(
+                        requireContext(),
+                        normalizedState,
+                        city,
+                        lat,
+                        lon
+                    )
+                    predictAirQuality(modelCity, normalizedState, lat, lon)
+                } catch (e: Exception) {
+                    showToast("Failed to get location data for forecast")
+                }
+            }
+        }
+    }
+
+    private fun loadWeather() {
+        clearMap()
+        currentLat?.let { lat ->
+            currentLon?.let { lon ->
+                lifecycleScope.launch {
+                    try {
+                        val weather = getWeatherData(lat, lon)
+                        showWeatherData(weather)
+
+                        val feature = Feature.fromGeometry(Point.fromLngLat(lon, lat))
+                        feature.addStringProperty("icon", getWeatherIcon(weather.weatherCode))
+                        feature.addStringProperty("label", "${weather.temperature}°C | ${weather.weatherCondition}")
+
+                        updateMapFeatures(listOf(feature), "weather-layer", "weather-source")
+                    } catch (e: Exception) {
+                        showToast("Failed to load weather data")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadHazardMap() {
+        clearMap()
+        showToast("Hazard map will show detected hazards in the area")
+        // Implement your hazard map visualization here
+    }
+
+    // In CitizenHomeFragment.kt
+
+    // In CitizenHomeFragment.kt
+
+    suspend fun getLiveAQIData(lat: Double, lon: Double): AQIData {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = AirQualityApiClient.api.getAQIHourly(lat, lon)
+
+                if (response.hourly != null) {
+                    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:00", Locale.getDefault())
+                    sdf.timeZone = TimeZone.getTimeZone("UTC")
+                    val currentHourString = sdf.format(Date())
+
+                    Log.d("AQI_DEBUG", "Looking for timestamp: $currentHourString")
+                    Log.d("AQI_DEBUG", "Sample response times: ${response.hourly.time.take(5)}")
+
+                    val index = response.hourly.time.indexOf(currentHourString)
+
+                    if (index != -1) {
+                        val pm25Value = response.hourly.pm25.getOrNull(index) ?: 0.0
+                        val pm10Value = response.hourly.pm10.getOrNull(index) ?: 0.0
+                        Log.d("AQI_DEBUG", "Matched PM2.5: $pm25Value, PM10: $pm10Value")
+                        AQIData(pm25 = pm25Value, pm10 = pm10Value)
+                    } else {
+                        Log.w("AQI_DEBUG", "Hour not found, fallback to first index")
+                        val pm25Value = response.hourly.pm25.firstOrNull() ?: 0.0
+                        val pm10Value = response.hourly.pm10.firstOrNull() ?: 0.0
+                        AQIData(pm25 = pm25Value, pm10 = pm10Value)
+                    }
+                } else {
+                    Log.e("AQI_DEBUG", "Hourly data missing")
+                    AQIData(pm25 = 0.0, pm10 = 0.0)
+                }
+            } catch (e: Exception) {
+                Log.e("AQI_DEBUG", "Failed to fetch AQI", e)
+                AQIData(pm25 = 0.0, pm10 = 0.0)
+            }
+        }
+    }
+
+
+
+    private suspend fun getWeatherData(lat: Double, lon: Double): WeatherData {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = WeatherApiClient.api.getWeather(lat, lon)
+                if (response.isSuccessful) {
+                    response.body()?.current?.let { current ->
+                        WeatherData(
+                            temperature = current.temperature,
+                            weatherCode = current.weatherCode,
+                            weatherCondition = mapWeatherCode(current.weatherCode),
+                            windSpeed = current.windSpeed,
+                            humidity = current.humidity
+                        )
+                    } ?: throw Exception("Empty weather response")
+                } else {
+                    throw Exception("Weather API error: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("Weather", "Failed to fetch weather data", e)
+                throw e
+            }
+        }
+    }
+    private fun mapWeatherCode(code: Int): String {
+        return when (code) {
+            0 -> "Clear sky"
+            1, 2, 3 -> "Partly cloudy"
+            45, 48 -> "Fog"
+            51, 53, 55 -> "Drizzle"
+            56, 57 -> "Freezing drizzle"
+            61, 63, 65 -> "Rain"
+            66, 67 -> "Freezing rain"
+            71, 73, 75 -> "Snow"
+            77 -> "Snow grains"
+            80, 81, 82 -> "Rain showers"
+            85, 86 -> "Snow showers"
+            95 -> "Thunderstorm"
+            96, 99 -> "Thunderstorm with hail"
+            else -> "Unknown"
+        }
+    }
+
+    private fun getWeatherIcon(weatherCode: Int): String {
+        return when (weatherCode) {
+            0 -> "clear-day"
+            1, 2, 3 -> "partly-cloudy-day"
+            45, 48 -> "fog"
+            in 51..57 -> "drizzle"
+            in 61..67 -> "rain"
+            in 71..77 -> "snow"
+            in 80..82 -> "rain"
+            in 85..86 -> "snow"
+            in 95..99 -> "thunderstorms"
+            else -> "not-available"
+        }
+    }
+
+    private fun showWeatherData(weather: WeatherData) {
+        val weatherText = """
+            Temperature: ${weather.temperature}°C
+            Condition: ${weather.weatherCondition}
+            Humidity: ${weather.humidity}%
+            Wind: ${weather.windSpeed} km/h
+        """.trimIndent()
+
+        showToast(weatherText, Toast.LENGTH_LONG)
+    }
+
+    private fun clearMap() {
+        mapView.mapboxMap.getStyle { style ->
+            // Remove layers
+            try {
+                style.removeStyleLayer("aqi-layer")
+                style.removeStyleLayer("forecast-layer")
+                style.removeStyleLayer("weather-layer")
+                style.removeStyleLayer("hazard-layer")
+            } catch (e: Exception) {
+                Log.e("MapStyle", "Error removing layers", e)
+            }
+
+            // Remove sources
+            try {
+                style.removeStyleSource("aqi-source")
+                style.removeStyleSource("forecast-source")
+                style.removeStyleSource("weather-source")
+                style.removeStyleSource("hazard-source")
+            } catch (e: Exception) {
+                Log.e("MapStyle", "Error removing sources", e)
+            }
+        }
+    }
+
+    fun createAQIBitmap(context: Context, aqiValue: Int): Bitmap {
+        val text = "AQI\n$aqiValue"
+
+        val paint = Paint().apply {
+            color = Color.WHITE
+            textSize = 36f
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = Typeface.DEFAULT_BOLD
+        }
+
+        val backgroundColor = when {
+            aqiValue <= 50 -> Color.GREEN
+            aqiValue <= 100 -> Color.YELLOW
+            aqiValue <= 200 -> Color.parseColor("#FFA500") // Orange
+            aqiValue <= 300 -> Color.RED
+            else -> Color.MAGENTA
+        }
+
+        val width = 150
+        val height = 150
+
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        // Draw background circle
+        val radius = width / 2f
+        val cx = width / 2f
+        val cy = height / 2f
+
+        val bgPaint = Paint().apply {
+            color = backgroundColor
+            isAntiAlias = true
+        }
+        canvas.drawCircle(cx, cy, radius, bgPaint)
+
+        // Draw AQI text
+        val textLines = text.split("\n")
+        val lineHeight = paint.textSize + 4
+        val totalHeight = lineHeight * textLines.size
+
+        textLines.forEachIndexed { index, line ->
+            val y = cy - totalHeight / 2 + (index + 1) * lineHeight
+            canvas.drawText(line, cx, y, paint)
+        }
+
+        return bitmap
+    }
+
 
     private fun initViews(view: View) {
         tvCityName = view.findViewById(R.id.tvCityName)
@@ -188,7 +690,19 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun setupMap() {
         mapView.location.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
-        mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS)
+        mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
+            // Set initial camera position if we have location
+            currentLat?.let { lat ->
+                currentLon?.let { lon ->
+                    mapView.mapboxMap.setCamera(
+                        CameraOptions.Builder()
+                            .center(Point.fromLngLat(lon, lat))
+                            .zoom(10.0)
+                            .build()
+                    )
+                }
+            }
+        }
     }
 
     private fun setupRangeSeekBar() {

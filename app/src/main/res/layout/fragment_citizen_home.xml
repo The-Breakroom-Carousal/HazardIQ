@@ -39,6 +39,23 @@
             android:max="50"
             android:progress="10" />
 
+        <Spinner
+            android:id="@+id/optionSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp" />
+
+        <TextView
+            android:id="@+id/tvAqiText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AQI: --"
+            android:textSize="13sp"
+            android:padding="4dp"
+            android:layout_gravity="center_horizontal" />
+
+
+
         <com.mapbox.maps.MapView
             android:id="@+id/mapView"
             android:layout_width="match_parent"

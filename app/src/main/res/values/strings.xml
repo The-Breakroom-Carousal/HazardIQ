@@ -7,4 +7,10 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="sos_button">SOS Button</string>
+    <string-array name="aqi_options">
+        <item>Live AQI</item>
+        <item>Forecast AQI</item>
+        <item>Weather</item>
+        <item>Hazards</item>
+    </string-array>
 </resources>

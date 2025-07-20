@@ -1,5 +1,6 @@
 package com.hazardiqplus.services
 
+import com.hazardiqplus.data.AQIResponse
 import com.hazardiqplus.data.NearbyAQIResponse
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
@@ -8,7 +9,9 @@ import com.hazardiqplus.data.SosResponse
 import com.hazardiqplus.data.User
 import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
+import com.hazardiqplus.data.WeatherResponse
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -36,4 +39,6 @@ interface ApiService {
         @Query("lon") lon: Double,
         @Query("radius") radius: Int = 10
     ): Call<NearbyAQIResponse>
+
+
 }
