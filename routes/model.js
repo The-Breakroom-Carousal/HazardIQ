@@ -2,6 +2,17 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios').create({ timeout: 30000 });
+const axiosRetry = require('axios-retry');
+axiosRetry(axios, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (error) => {
+    return (
+      axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+      [429, 502, 503, 504].includes(error?.response?.status)
+    );
+  }
+});
 const NodeCache = require('node-cache');
 const cors = require('cors');
 const pool = require('../db');
