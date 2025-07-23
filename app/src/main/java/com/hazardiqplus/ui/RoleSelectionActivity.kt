@@ -12,6 +12,8 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
@@ -41,6 +43,16 @@ class RoleSelectionActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_role_selection)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.roleMain)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.roleBottomSheet)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+            insets
+        }
 
         roleDropdown = findViewById(R.id.roleDropdown)
         continueButton = findViewById(R.id.continueButton)

@@ -1,123 +1,212 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="?attr/android:colorBackground">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/roleMain"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:layout_height="match_parent">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="32dp" />
-
-        <TextView
-            android:id="@+id/welcomeSubtitle"
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Welcome to HazardIQ+"
-            android:textSize="20sp"
-            android:textColor="#0097A7"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp"
-            android:fontFamily="sans-serif-medium" />
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.15" />
 
-        <TextView
-            android:id="@+id/welcomeHeadline"
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Become a hero in\nsomeone's life today!"
-            android:textSize="26sp"
-            android:textColor="#212121"
-            android:textStyle="italic"
-            android:fontFamily="serif"
-            android:layout_marginBottom="48dp"
-            android:layout_marginTop="8dp" />
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.85" />
 
-        <!-- Phone Number Row -->
-
-
-        <!-- Input Fields (Updated without custom style) -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline4"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="First Name"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="#D32F2F">
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.2" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/firstName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPersonName" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <ImageView
+            android:id="@+id/imageView3"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:contentDescription="Image"
+            app:layout_constraintBottom_toTopOf="@+id/guideline4"
+            app:layout_constraintEnd_toStartOf="@+id/guideline2"
+            app:layout_constraintStart_toStartOf="@+id/guideline"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/undraw_nature_benefits_ak6e" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Last Name"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="#D32F2F">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/roleBottomSheet"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/role_background"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/guideline4">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/lastName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPersonName" />
-        </com.google.android.material.textfield.TextInputLayout>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginHorizontal="24dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Email"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="#D32F2F">
+                <TextView
+                    android:id="@+id/welcomeSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Choose your role!"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toTopOf="@+id/welcomeHeadline"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_chainStyle="spread" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/emailInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:enabled="false"
-                android:inputType="textEmailAddress" />
-        </com.google.android.material.textfield.TextInputLayout>
+                <TextView
+                    android:id="@+id/welcomeHeadline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="serif"
+                    android:text="Become a hero in\nsomeone's life today!"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:textSize="26sp"
+                    android:textStyle="italic"
+                    app:layout_constraintBottom_toTopOf="@+id/firstNameLayout"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/welcomeSubtitle" />
 
-        <!-- Role Dropdown -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/roleLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Select Role"
-            app:endIconMode="dropdown_menu"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="#D32F2F">
+                <!-- Phone Number Row -->
 
-            <AutoCompleteTextView
-                android:id="@+id/roleDropdown"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none"
-                android:padding="12dp"
-                android:background="@null"
-                android:textColor="#000000" />
-        </com.google.android.material.textfield.TextInputLayout>
 
-        <Button
-            android:id="@+id/continueButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="Continue"
-            android:backgroundTint="#D32F2F"
-            android:textColor="#FFFFFF"
-            android:textAllCaps="false"
-            android:paddingTop="14dp"
-            android:paddingBottom="14dp" />
-    </LinearLayout>
-</ScrollView>
+                <!-- Input Fields (Updated without custom style) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/firstNameLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="First Name"
+                    app:boxStrokeColor="?attr/colorOnPrimaryContainer"
+                    app:boxBackgroundColor="?attr/android:colorBackground"
+                    app:layout_constraintBottom_toTopOf="@+id/lastNameLayout"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/welcomeHeadline"
+                    app:boxCornerRadiusBottomEnd="32dp"
+                    app:boxCornerRadiusBottomStart="32dp"
+                    app:boxCornerRadiusTopEnd="32dp"
+                    app:boxCornerRadiusTopStart="32dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/firstName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/lastNameLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Last Name"
+                    app:boxStrokeColor="?attr/colorOnPrimaryContainer"
+                    app:boxBackgroundColor="?attr/android:colorBackground"
+                    app:layout_constraintBottom_toTopOf="@+id/emailInputLayout"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/firstNameLayout"
+                    app:boxCornerRadiusBottomEnd="32dp"
+                    app:boxCornerRadiusBottomStart="32dp"
+                    app:boxCornerRadiusTopEnd="32dp"
+                    app:boxCornerRadiusTopStart="32dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/lastName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/emailInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Email"
+                    app:boxStrokeColor="?attr/colorOnPrimaryContainer"
+                    app:boxBackgroundColor="?attr/android:colorBackground"
+                    app:layout_constraintBottom_toTopOf="@+id/roleLayout"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/lastNameLayout"
+                    app:boxCornerRadiusBottomEnd="32dp"
+                    app:boxCornerRadiusBottomStart="32dp"
+                    app:boxCornerRadiusTopEnd="32dp"
+                    app:boxCornerRadiusTopStart="32dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/emailInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:inputType="textEmailAddress" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Role Dropdown -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/roleLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Select Role"
+                    app:boxStrokeColor="?attr/colorOnPrimaryContainer"
+                    app:boxBackgroundColor="?attr/android:colorBackground"
+                    app:endIconMode="dropdown_menu"
+                    app:layout_constraintBottom_toTopOf="@+id/continueButton"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/emailInputLayout"
+                    app:boxCornerRadiusBottomEnd="32dp"
+                    app:boxCornerRadiusBottomStart="32dp"
+                    app:boxCornerRadiusTopEnd="32dp"
+                    app:boxCornerRadiusTopStart="32dp">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/roleDropdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:padding="12dp"
+                        android:textColor="#000000" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <Button
+                    android:id="@+id/continueButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:text="Continue"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

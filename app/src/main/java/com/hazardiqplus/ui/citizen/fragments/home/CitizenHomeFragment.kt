@@ -80,6 +80,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     // UI Components
     private lateinit var tvCityName: TextView
+    private lateinit var tvAQI: TextView
     private lateinit var mapView: MapView
     private lateinit var btnSafeRoutes: Button
     private lateinit var hazardDetector: Button
@@ -232,6 +233,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         clearMap()
         currentLat?.let { lat ->
             currentLon?.let { lon ->
+                loadCurrentAQIofUser(currentLat!!, currentLon!!)
                 // First center the map on user location
                 mapView.mapboxMap.setCamera(
                     CameraOptions.Builder()
@@ -642,6 +644,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
 
     private fun initViews(view: View) {
+        tvAQI = view.findViewById(R.id.tvAqiText)
         tvCityName = view.findViewById(R.id.tvCityName)
         mapView = view.findViewById(R.id.mapView)
         btnSafeRoutes = view.findViewById(R.id.btnSafeRoutes)
@@ -1084,6 +1087,36 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
         Toast.makeText(requireContext(), message, duration).show()
+    }
+
+    private fun loadCurrentAQIofUser(lat: Double, lon: Double) {
+        lifecycleScope.launch {
+            try {
+                val response = AirQualityApiClient.api.getAQIHourly(lat, lon)
+
+                val hourly = response.hourly
+                if (hourly != null) {
+                    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:00", Locale.getDefault())
+                    sdf.timeZone = TimeZone.getTimeZone("UTC")
+                    val currentHour = sdf.format(Date())
+
+                    val index = hourly.time.indexOf(currentHour)
+
+                    val pm25 = if (index != -1) hourly.pm25[index] else hourly.pm25.firstOrNull() ?: 0.0
+                    val pm10 = if (index != -1) hourly.pm10[index] else hourly.pm10.firstOrNull() ?: 0.0
+
+                    val aqi = calculateAQI(pm25, pm10)
+
+                    tvAQI.text = "AQI: $aqi"
+                } else {
+                    tvAQI.text = "AQI: --"
+                }
+
+            } catch (e: Exception) {
+                Log.e("OpenMeteo", "Failed to load AQI", e)
+                tvAQI.text = "AQI: Error"
+            }
+        }
     }
 
     override fun onDestroyView() {

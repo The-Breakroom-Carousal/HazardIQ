@@ -23,7 +23,6 @@
             app:srcCompat="@mipmap/ic_launcher"
             app:shapeAppearanceOverlay="@style/CircleImageShape" />
 
-
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline"
             android:layout_width="wrap_content"
