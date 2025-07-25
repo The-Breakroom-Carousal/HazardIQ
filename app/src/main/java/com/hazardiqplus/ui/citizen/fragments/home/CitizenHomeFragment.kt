@@ -1,6 +1,7 @@
 package com.hazardiqplus.ui.citizen.fragments.home
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -233,7 +234,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         clearMap()
         currentLat?.let { lat ->
             currentLon?.let { lon ->
-                loadCurrentAQIofUser(currentLat!!, currentLon!!)
                 // First center the map on user location
                 mapView.mapboxMap.setCamera(
                     CameraOptions.Builder()
@@ -243,56 +243,90 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 )
 
                 // Then load AQI for user location
-                fetchNearbyAQI(rangeSeekBar.progress)
+                fetchNearbyAQI( rangeSeekBar.progress)
 
                 // Load AQI for capital cities
-                    lifecycleScope.launch {
-                        try {
-                            val features = mutableListOf<Feature>()
-                            for ((city, cityLat, cityLon) in cityCapitals) {
-                                val aqiData = getLiveAQIData(cityLat, cityLon)
-                                val aqiValue = calculateAQI(aqiData.pm25, aqiData.pm10)
+                lifecycleScope.launch {
+                    try {
+                        val features = mutableListOf<Feature>()
+                        loadCurrentAQIofUser(currentLat!!, currentLon!!, features)
+                        for ((city, cityLat, cityLon) in cityCapitals) {
+                            val aqiData = getLiveAQIData(cityLat, cityLon)
+                            val aqiValue = calculateAQI(aqiData.pm25, aqiData.pm10)
 
-                                val feature = Feature.fromGeometry(Point.fromLngLat(cityLon, cityLat))
-                                feature.addNumberProperty("aqi", aqiValue)
-                                feature.addStringProperty("label", "$city AQI: $aqiValue")
-                                features.add(feature)
-                            }
-                            updateMapFeatures(features, "aqi-layer", "aqi-source")
-
-                            // Ensure map stays centered after loading features
-                            mapView.mapboxMap.setCamera(
-                                CameraOptions.Builder()
-                                    .center(Point.fromLngLat(lon, lat))
-                                    .zoom(10.0)
-                                    .build()
-                            )
-                        } catch (e: Exception) {
-                            Log.e("CurrentAQI", "Failed to load capital cities AQI", e)
+                            val feature = Feature.fromGeometry(Point.fromLngLat(cityLon, cityLat))
+                            feature.addNumberProperty("aqi", aqiValue)
+                            feature.addStringProperty("city name", city)
+                            features.add(feature)
                         }
+                        updateMapFeatures(features, "aqi-layer", "aqi-source")
+
+                        // Ensure map stays centered after loading features
+                        mapView.mapboxMap.setCamera(
+                            CameraOptions.Builder()
+                                .center(Point.fromLngLat(lon, lat))
+                                .zoom(10.0)
+                                .build()
+                        )
+                    } catch (e: Exception) {
+                        Log.e("CurrentAQI", "Failed to load capital cities AQI", e)
                     }
                 }
             }
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private suspend fun loadCurrentAQIofUser(lat: Double, lon: Double, features: MutableList<Feature>) {
+        try {
+            val response = AirQualityApiClient.api.getAQIHourly(lat, lon)
+
+            val hourly = response.hourly
+            if (hourly != null) {
+                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:00", Locale.getDefault())
+                sdf.timeZone = TimeZone.getTimeZone("UTC")
+                val currentHour = sdf.format(Date())
+
+                val index = hourly.time.indexOf(currentHour)
+
+                val pm25 = if (index != -1) hourly.pm25[index] else hourly.pm25.firstOrNull() ?: 0.0
+                val pm10 = if (index != -1) hourly.pm10[index] else hourly.pm10.firstOrNull() ?: 0.0
+
+                val aqi = calculateAQI(pm25, pm10)
+                tvAQI.text = "AQI: $aqi"
+
+                val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
+                val city = address?.locality ?: "Unknown"
+
+                val feature = Feature.fromGeometry(Point.fromLngLat(lon, lat))
+                feature.addNumberProperty("aqi", aqi)
+                feature.addStringProperty("city name", city)
+
+                features.add(feature)
+            } else {
+                tvAQI.text = "AQI: --"
+            }
+        } catch (e: Exception) {
+            Log.e("OpenMeteo", "Failed to load AQI", e)
+            tvAQI.text = "AQI: Error"
+        }
     }
 
     private fun updateMapFeatures(features: List<Feature>, layerId: String, sourceId: String) {
         mapView.mapboxMap.getStyle { style ->
             val featureCollection = FeatureCollection.fromFeatures(features)
-
-            // Remove existing layer and source if they exist
-            if (style.styleManager.styleSourceExists(sourceId)) {
-                style.removeStyleSource(sourceId)
+            style.removeStyleSource(sourceId)
+            style.removeStyleLayer(layerId)
+            val source = style.getSource(sourceId)
+            if (source is GeoJsonSource) {
+                source.featureCollection(featureCollection)
+            } else {
+                style.addSource(geoJsonSource(sourceId) {
+                    featureCollection(featureCollection)
+                })
             }
-            if (style.styleManager.styleLayerExists(layerId)) {
-                style.removeStyleLayer(layerId)
-            }
 
-            // Add the new source
-            style.addSource(geoJsonSource(sourceId) {
-                featureCollection(featureCollection)
-            })
-
-            // Add the appropriate layer based on view mode
             when (currentViewMode) {
                 ViewMode.CURRENT_AQI, ViewMode.FORECAST -> {
                     // AQI visualization (circles with color scale)
@@ -971,11 +1005,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         }
     }
 
-
-
-
-
-
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadius = 6371.0 // km
         val dLat = Math.toRadians(lat2 - lat1)
@@ -1087,36 +1116,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
         Toast.makeText(requireContext(), message, duration).show()
-    }
-
-    private fun loadCurrentAQIofUser(lat: Double, lon: Double) {
-        lifecycleScope.launch {
-            try {
-                val response = AirQualityApiClient.api.getAQIHourly(lat, lon)
-
-                val hourly = response.hourly
-                if (hourly != null) {
-                    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:00", Locale.getDefault())
-                    sdf.timeZone = TimeZone.getTimeZone("UTC")
-                    val currentHour = sdf.format(Date())
-
-                    val index = hourly.time.indexOf(currentHour)
-
-                    val pm25 = if (index != -1) hourly.pm25[index] else hourly.pm25.firstOrNull() ?: 0.0
-                    val pm10 = if (index != -1) hourly.pm10[index] else hourly.pm10.firstOrNull() ?: 0.0
-
-                    val aqi = calculateAQI(pm25, pm10)
-
-                    tvAQI.text = "AQI: $aqi"
-                } else {
-                    tvAQI.text = "AQI: --"
-                }
-
-            } catch (e: Exception) {
-                Log.e("OpenMeteo", "Failed to load AQI", e)
-                tvAQI.text = "AQI: Error"
-            }
-        }
     }
 
     override fun onDestroyView() {
