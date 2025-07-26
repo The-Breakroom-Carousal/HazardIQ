@@ -32,6 +32,7 @@ import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.loadingindicator.LoadingIndicator
 import com.hazardiqplus.R
 import com.hazardiqplus.clients.AirQualityApiClient
 import com.hazardiqplus.clients.CityModelMapper
@@ -82,6 +83,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     // UI Components
     private lateinit var tvCityName: TextView
     private lateinit var tvAQI: TextView
+    private lateinit var loadingIndicator: LoadingIndicator
     private lateinit var mapView: MapView
     private lateinit var btnSafeRoutes: Button
     private lateinit var hazardDetector: Button
@@ -231,6 +233,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun loadCurrentAQI() {
+        loadingIndicator.visibility = View.VISIBLE
         clearMap()
         currentLat?.let { lat ->
             currentLon?.let { lon ->
@@ -260,6 +263,15 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                             features.add(feature)
                         }
                         updateMapFeatures(features, "aqi-layer", "aqi-source")
+                        withContext(Dispatchers.Main) {
+                            loadingIndicator.animate()
+                                .alpha(0f)
+                                .setDuration(250)
+                                .withEndAction {
+                                    loadingIndicator.visibility = View.GONE
+                                }
+                                .start()
+                        }
 
                         // Ensure map stays centered after loading features
                         mapView.mapboxMap.setCamera(
@@ -685,6 +697,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         hazardDetector = view.findViewById(R.id.hazard)
         rangeSeekBar = view.findViewById(R.id.seekBarRange)
         rangeText = view.findViewById(R.id.tvRange)
+        loadingIndicator = view.findViewById(R.id.loadingIndicator)
 
         btnSafeRoutes.setOnClickListener {
             showToast("Safe Routes functionality coming soon")
