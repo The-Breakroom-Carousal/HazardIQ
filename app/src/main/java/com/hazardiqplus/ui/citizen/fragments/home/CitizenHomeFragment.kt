@@ -2,13 +2,8 @@ package com.hazardiqplus.ui.citizen.fragments.home
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Typeface
 import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
@@ -46,7 +41,9 @@ import com.hazardiqplus.ml.Model
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraBoundsOptions
 import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.CoordinateBounds
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
 import kotlin.math.sin as kSin
@@ -78,9 +75,11 @@ import retrofit2.Response
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.core.graphics.scale
+import com.mapbox.maps.extension.style.style
+
 class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
-    // UI Components
     private lateinit var tvCityName: TextView
     private lateinit var tvAQI: TextView
     private lateinit var loadingIndicator: LoadingIndicator
@@ -92,16 +91,11 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private lateinit var optionSelector: Spinner
     private enum class ViewMode { CURRENT_AQI, FORECAST, WEATHER, HAZARD }
     private var currentViewMode = ViewMode.CURRENT_AQI
-
-    // Camera and permissions
     private lateinit var cameraLauncher: ActivityResultLauncher<Uri>
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
     private var imageUri: Uri? = null
-
-    // Location tracking
     private var currentLat: Double? = null
     private var currentLon: Double? = null
-
     data class AQIData(val pm25: Double, val pm10: Double)
     private data class WeatherData(
         val temperature: Double,
@@ -110,13 +104,11 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         val windSpeed: Double,
         val humidity: Double
     )
-    // ML Model labels
     private val labels = listOf(
         "Water_Disaster", "Non_Damaged_Wildlife_Forest", "Non_Damaged_sea",
         "Non_Damaged_Buildings_Street", "Non_Damaged_human", "Damaged_Infrastructure",
         "Earthquake", "Human_Damage", "Urban_Fire", "Wild_Fire", "Land_Slide", "Drought"
     )
-
     private val cityCapitals = listOf(
         CityPoint("Delhi", 28.6139, 77.2090),
         CityPoint("Mumbai", 19.0760, 72.8777),
@@ -146,15 +138,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         CityPoint("Dehradun", 30.3165, 78.0322),
         CityPoint("Chandigarh", 30.7333, 76.7794)
     )
-
-
-    // Permission requests
-    private val requiredPermissions = arrayOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.CAMERA
-    )
-
-    // Location permission callback
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -165,7 +148,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         }
     }
 
-    // Location change listener
     private val onIndicatorPositionChangedListener = OnIndicatorPositionChangedListener { point ->
         val lat = point.latitude()
         val lon = point.longitude()
@@ -237,29 +219,18 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         clearMap()
         currentLat?.let { lat ->
             currentLon?.let { lon ->
-                // First center the map on user location
-                mapView.mapboxMap.setCamera(
-                    CameraOptions.Builder()
-                        .center(Point.fromLngLat(lon, lat))
-                        .zoom(10.0) // Adjust zoom level as needed
-                        .build()
-                )
-
-                // Then load AQI for user location
-                fetchNearbyAQI( rangeSeekBar.progress)
-
-                // Load AQI for capital cities
                 lifecycleScope.launch {
                     try {
                         val features = mutableListOf<Feature>()
                         loadCurrentAQIofUser(currentLat!!, currentLon!!, features)
+                        fetchNearbyAQI( rangeSeekBar.progress, features)
                         for ((city, cityLat, cityLon) in cityCapitals) {
                             val aqiData = getLiveAQIData(cityLat, cityLon)
                             val aqiValue = calculateAQI(aqiData.pm25, aqiData.pm10)
 
                             val feature = Feature.fromGeometry(Point.fromLngLat(cityLon, cityLat))
                             feature.addNumberProperty("aqi", aqiValue)
-                            feature.addStringProperty("city name", city)
+                            feature.addStringProperty("label", "$city | AQI: $aqiValue")
                             features.add(feature)
                         }
                         updateMapFeatures(features, "aqi-layer", "aqi-source")
@@ -272,14 +243,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                                 }
                                 .start()
                         }
-
-                        // Ensure map stays centered after loading features
-                        mapView.mapboxMap.setCamera(
-                            CameraOptions.Builder()
-                                .center(Point.fromLngLat(lon, lat))
-                                .zoom(10.0)
-                                .build()
-                        )
                     } catch (e: Exception) {
                         Log.e("CurrentAQI", "Failed to load capital cities AQI", e)
                     }
@@ -313,7 +276,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
                 val feature = Feature.fromGeometry(Point.fromLngLat(lon, lat))
                 feature.addNumberProperty("aqi", aqi)
-                feature.addStringProperty("city name", city)
+                feature.addStringProperty("label", "$city | AQI: $aqi")
 
                 features.add(feature)
             } else {
@@ -341,7 +304,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
             when (currentViewMode) {
                 ViewMode.CURRENT_AQI, ViewMode.FORECAST -> {
-                    // AQI visualization (circles with color scale)
                     style.addLayer(
                         circleLayer(layerId, sourceId) {
                             circleRadius(8.0)
@@ -361,8 +323,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                             circleOpacity(0.8)
                         }
                     )
-
-                    // Add labels for AQI points
                     style.addLayer(
                         symbolLayer("${layerId}-label", sourceId) {
                             textField(Expression.get("label"))
@@ -373,28 +333,9 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                             textOffset(listOf(0.0, 1.5))
                         }
                     )
-
-                    // Center on user location or first point
-                    val centerPoint = if (currentLat != null && currentLon != null) {
-                        Point.fromLngLat(currentLon!!, currentLat!!)
-                    } else if (features.isNotEmpty()) {
-                        (features.first().geometry() as? Point) ?: Point.fromLngLat(0.0, 0.0)
-                    } else {
-                        Point.fromLngLat(0.0, 0.0)
-                    }
-
-                    mapView.mapboxMap.setCamera(
-                        CameraOptions.Builder()
-                            .center(centerPoint)
-                            .zoom(10.0) // Adjust zoom level as needed
-                            .build()
-                    )
                 }
-                // ... rest of your view mode cases
-
 
                 ViewMode.WEATHER -> {
-                    // Weather visualization (icons with temperature)
                     style.addLayer(
                         symbolLayer(layerId, sourceId) {
                             iconImage(Expression.get("icon"))
@@ -410,7 +351,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
 
                 ViewMode.HAZARD -> {
-                    // Hazard visualization (could be customized)
                     style.addLayer(
                         circleLayer(layerId, sourceId) {
                             circleRadius(10.0)
@@ -461,7 +401,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     val city = address?.locality ?: "Unknown"
                     val state = address?.adminArea ?: "Unknown"
                     val normalizedState = CityModelMapper.normalizeStateName(state)
-                    val (modelCity, distance) = CityModelMapper.getNearestSupportedCity(
+                    val (modelCity, _) = CityModelMapper.getNearestSupportedCity(
                         requireContext(),
                         normalizedState,
                         city,
@@ -469,7 +409,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                         lon
                     )
                     predictAirQuality(modelCity, normalizedState, lat, lon)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     showToast("Failed to get location data for forecast")
                 }
             }
@@ -477,7 +417,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun loadWeather() {
-        clearMap()
         currentLat?.let { lat ->
             currentLon?.let { lon ->
                 lifecycleScope.launch {
@@ -490,7 +429,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                         feature.addStringProperty("label", "${weather.temperature}°C | ${weather.weatherCondition}")
 
                         updateMapFeatures(listOf(feature), "weather-layer", "weather-source")
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         showToast("Failed to load weather data")
                     }
                 }
@@ -501,12 +440,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private fun loadHazardMap() {
         clearMap()
         showToast("Hazard map will show detected hazards in the area")
-        // Implement your hazard map visualization here
     }
-
-    // In CitizenHomeFragment.kt
-
-    // In CitizenHomeFragment.kt
 
     suspend fun getLiveAQIData(lat: Double, lon: Double): AQIData {
         return withContext(Dispatchers.IO) {
@@ -544,8 +478,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
             }
         }
     }
-
-
 
     private suspend fun getWeatherData(lat: Double, lon: Double): WeatherData {
         return withContext(Dispatchers.IO) {
@@ -639,56 +571,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         }
     }
 
-    fun createAQIBitmap(context: Context, aqiValue: Int): Bitmap {
-        val text = "AQI\n$aqiValue"
-
-        val paint = Paint().apply {
-            color = Color.WHITE
-            textSize = 36f
-            textAlign = Paint.Align.CENTER
-            isAntiAlias = true
-            typeface = Typeface.DEFAULT_BOLD
-        }
-
-        val backgroundColor = when {
-            aqiValue <= 50 -> Color.GREEN
-            aqiValue <= 100 -> Color.YELLOW
-            aqiValue <= 200 -> Color.parseColor("#FFA500") // Orange
-            aqiValue <= 300 -> Color.RED
-            else -> Color.MAGENTA
-        }
-
-        val width = 150
-        val height = 150
-
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-
-        // Draw background circle
-        val radius = width / 2f
-        val cx = width / 2f
-        val cy = height / 2f
-
-        val bgPaint = Paint().apply {
-            color = backgroundColor
-            isAntiAlias = true
-        }
-        canvas.drawCircle(cx, cy, radius, bgPaint)
-
-        // Draw AQI text
-        val textLines = text.split("\n")
-        val lineHeight = paint.textSize + 4
-        val totalHeight = lineHeight * textLines.size
-
-        textLines.forEachIndexed { index, line ->
-            val y = cy - totalHeight / 2 + (index + 1) * lineHeight
-            canvas.drawText(line, cx, y, paint)
-        }
-
-        return bitmap
-    }
-
-
     private fun initViews(view: View) {
         tvAQI = view.findViewById(R.id.tvAqiText)
         tvCityName = view.findViewById(R.id.tvCityName)
@@ -741,7 +623,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private fun setupMap() {
         mapView.location.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
         mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
-            // Set initial camera position if we have location
             currentLat?.let { lat ->
                 currentLon?.let { lon ->
                     mapView.mapboxMap.setCamera(
@@ -750,11 +631,29 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                             .zoom(10.0)
                             .build()
                     )
+                    restrictMapToIndia()
                 }
             }
         }
     }
 
+    private fun restrictMapToIndia() {
+        val bounds = CoordinateBounds(
+            Point.fromLngLat(68.1, 6.5),     // Southwest corner
+            Point.fromLngLat(97.4, 37.6)     // Northeast corner
+        )
+
+        val cameraBoundsOptions = CameraBoundsOptions.Builder()
+            .bounds(bounds)
+            .minZoom(4.5)    // Optional: limit zoom out
+            .maxZoom(16.0)   // Optional: limit zoom in
+            .build()
+
+        mapView.mapboxMap.setBounds(cameraBoundsOptions)
+    }
+
+
+    @SuppressLint("SetTextI18n")
     private fun setupRangeSeekBar() {
         rangeSeekBar.progress = 10
         rangeText.text = "Range: 10 km"
@@ -762,7 +661,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val radius = progress.coerceAtLeast(1)
                 rangeText.text = "Range: $radius km"
-                fetchNearbyAQI(radius)
+                loadCurrentAQI()
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
@@ -830,6 +729,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         mapView.gestures.focalPoint = mapView.mapboxMap.pixelForCoordinate(point)
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateCityName(lat: Double, lon: Double) {
         try {
             val geocoder = Geocoder(requireContext(), Locale.getDefault())
@@ -838,8 +738,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
             val state = address?.adminArea ?: "Unknown"
             val normalizedState = CityModelMapper.normalizeStateName(state)
             tvCityName.text = "You are in: $city, $state"
-
-            // Get nearest supported city and make prediction
             val (modelCity, distance) = CityModelMapper.getNearestSupportedCity(
                 requireContext(),
                 normalizedState,
@@ -847,24 +745,18 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 lat,
                 lon
             )
-
             if (distance > 0) {
                 showToast("Using data from nearest supported location: $modelCity (${"%.1f".format(distance)} km away)")
             }
-
-            predictAirQuality(modelCity, normalizedState, lat, lon)
-
         } catch (e: Exception) {
             Log.e("CitizenHomeFragment", "Geocoder failed", e)
         }
     }
 
-    private fun fetchNearbyAQI(radius: Int) {
+    private fun fetchNearbyAQI(radius: Int, features: MutableList<Feature>) {
         val lat = currentLat ?: return
         val lon = currentLon ?: return
-
         Log.d("FetchAQI", "Fetching AQI for lat=$lat, lon=$lon, radius=$radius")
-
         RetrofitClient.instance.getNearbyAQI(lat, lon, radius)
             .enqueue(object : Callback<NearbyAQIResponse> {
                 override fun onResponse(
@@ -872,19 +764,19 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     response: Response<NearbyAQIResponse>
                 ) {
                     if (response.isSuccessful) {
+                        Log.d("NearbyAQI", "Server response: ${response.body()}")
                         response.body()?.data?.let { data ->
-                            val features = data.map {
+                            val nearbyFeatures = data.map {
                                 Feature.fromGeometry(Point.fromLngLat(it.lon, it.lat)).apply {
                                     addNumberProperty("aqi", it.AQI)
                                 }
                             }
-                            highlightAqiOnMap(features)
+                            features.addAll(nearbyFeatures)
                         }
                     } else {
                         Log.e("NearbyAQI", "Server error: ${response.code()}")
                     }
                 }
-
                 override fun onFailure(call: Call<NearbyAQIResponse>, t: Throwable) {
                     Log.e("NearbyAQI", "Network error", t)
                 }
@@ -1051,7 +943,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun preprocessImage(bitmap: Bitmap): TensorBuffer {
-        val resized = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
+        val resized = bitmap.scale(224, 224)
         val inputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 3, 224, 224), DataType.FLOAT32)
         val floatArray = FloatArray(224 * 224 * 3)
 
