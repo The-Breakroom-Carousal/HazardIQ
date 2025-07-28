@@ -129,7 +129,7 @@ async function fetchWeatherData(lat, lon) {
 async function callPredictAPI(input) {
   try {
     const response = await axios.post(
-      'https://arnavtr1-hazardiq-aqi.hf.space/api/predict',
+      'https://hazardiq.onrender.com/predict',
       {
         state: input.state,
         features: input.features
