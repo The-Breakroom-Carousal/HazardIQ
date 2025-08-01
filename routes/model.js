@@ -30,7 +30,37 @@ const config = {
 };
 
 const supportedCities = {
-  // ... (keep your existing supportedCities object)
+  "AndhraPradesh": ["Amravati", "Anantapur", "Chittoor", "Kadapa", "Rajamahendravaram", "Tirupati", "Vijayawada", "Visakhapatnam"],
+  "ArunachalPradesh": ["Naharlagun"],
+  "Assam": ["Guwahati", "Nagaon", "Nalbari", "Silchar"],
+  "Bihar": ["Araria", "Arrah", "Aurangabad", "Begusarai", "Bettiah", "Bhagalpur", "Chhapra", "Gaya", "Patna"],
+  "Chandigarh": ["Chandigarh"],
+  "Chattisgarh": ["Bhilai", "Bilaspur", "Chhal", "Korba", "Milupara", "Raipur"],
+  "Delhi": ["Delhi"],
+  "Gujarat": ["Ahmedabad", "Ankleshwar", "Gandhinagar", "Nandesari", "Surat", "Vapi"],
+  "Haryana": ["Ambala", "Bahadurgarh", "Ballabgarh", "Bhiwani", "Faridabad", "Fatehabad", "Gurugram", "Panipat", "Sirsa", "Sonipat"],
+  "HimachalPradesh": ["Baddi"],
+  "JK": ["Srinagar"],
+  "Jharkhand": ["Dhanbad"],
+  "Karnataka": ["Bengaluru", "Belgaum", "Dharwad", "Mangalore", "Mysuru", "Ramanagara", "Udupi", "Vijayapura"],
+  "Kerala": ["Kannur", "Thiruvananthapuram", "Thrissur"],
+  "MadhyaPradesh": ["Bhopal", "Dewas", "Gwalior", "Indore", "Ratlam", "Ujjain"],
+  "Maharashtra": ["Aurangabad", "Amravati", "Chandrapur", "Mumbai", "Nagpur", "Nashik", "Navimumbai", "Pune"],
+  "Manipur": ["Imphal"],
+  "Meghalaya": ["Shillong"],
+  "Mizoram": ["Aizawl"],
+  "Nagaland": ["Kohima"],
+  "Odisha": ["Angul", "Balasore", "Bhubaneswar", "Cuttack", "Rourkela", "Suakati"],
+  "Puducherry": ["Puducherry"],
+  "Punjab": ["Amritsar", "Bathinda", "Jalandhar", "Khanna", "Ludhiana", "Patiala", "Rupnagar"],
+  "Rajasthan": ["Ajmer", "Alwar", "Bikaner", "Jaipur", "Jaisalmer", "Kota", "Sikar"],
+  "Sikkim": ["Gangtok"],
+  "TamilNadu": ["Chennai", "Coimbatore", "Ooty", "Ramanathapuram", "Vellore"],
+  "Telangana": ["Hyderabad"],
+  "Tripura": ["Agartala"],
+  "UttarPradesh": ["Agra", "Kanpur", "Lucknow", "Varanasi", "Vrindavan"],
+  "Uttarakhand": ["Dehradun", "Kashipur", "Rishikesh"],
+  "WestBengal": ["Asansol", "Kolkata", "Siliguri"]
 };
 
 // Middleware
