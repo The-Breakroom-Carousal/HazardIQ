@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios').create({ timeout: 30000 });
 const axiosRetry = require('axios-retry').default;
+
 axiosRetry(axios, {
   retries: 3,
   retryDelay: axiosRetry.exponentialDelay,
@@ -13,6 +14,7 @@ axiosRetry(axios, {
     );
   }
 });
+  
 const NodeCache = require('node-cache');
 const cors = require('cors');
 const pool = require('../db');

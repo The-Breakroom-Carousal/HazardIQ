@@ -21,6 +21,7 @@ const createUsersTable = async () => {
     console.error("❌ Error creating 'users' table:", error);
   }
 };
+
 const air_quality_predictions = async () => {
   try {
     await pool.query(`
@@ -41,11 +42,32 @@ const air_quality_predictions = async () => {
   }
 };
 
+const hazard_data = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hazard_data (
+        id SERIAL PRIMARY KEY,
+        rad DOUBLE PRECISION NOT NULL,
+        hazard TEXT NOT NULL,
+        latitude DOUBLE PRECISION NOT NULL,
+        longitude DOUBLE PRECISION NOT NULL,
+        timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+    `); 
+    console.log("✅ Created 'hazard_data' table or already exists");
+  } catch (error) {
+    console.error("❌ Error creating 'hazard_data' table:", error);
+  }
+};
+
+
 
 
 const init = async () => {
   await createUsersTable();
-  await air_quality_predictions()
+  await air_quality_predictions();
+  await hazard_data();
 };
 
 init();

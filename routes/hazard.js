@@ -1,0 +1,54 @@
+const express = require('express');
+const router = express.Router();
+const pool  = require('../db');
+require('dotenv').config();
+router.post('/save-hazard',async(req,res)=>{
+    
+  const {  rad, hazard, lat, lng } = req.body;
+  if (!rad || !hazard || isNaN(lat) || isNaN(lng)) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: rad, hazard, lat, lon' 
+    });
+  }
+  try{
+    await pool.query(
+      `INSERT INTO hazard_data 
+       (rad,hazard, latitude, longitude)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [rad, hazard, lat, lng]
+    );
+
+    res.json({ success: true });
+    } catch (err) {
+        console.error('hazard saving Error:', err.message, err.stack);
+        res.status(500).json({ 
+        error: 'hazard saving failed',
+        details: err.message,
+        stack: err.stack
+        });
+    }
+    });
+router.post('/find-hazard',async(req,res)=>{
+    const { lat, lon, radius = 10 } = req.query;
+
+  if (isNaN(lat) || isNaN(lon)) {
+    return res.status(400).json({ error: 'Invalid coordinates' });
+  }
+
+  try {
+    const result = await pool.query(`
+      SELECT * FROM hazard_data
+      WHERE earth_distance(ll_to_earth($1::float8, $2::float8), ll_to_earth(latitude, longitude)) < $3::float8 * 1000
+      ORDER BY timestamp DESC LIMIT 50
+    `, [lat, lon, radius]);
+
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error('Database Error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch hazard data' });
+  }
+});
+
+module.exports = router;
+
+
