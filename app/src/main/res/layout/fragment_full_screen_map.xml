@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.citizen.fragments.FullScreenMapFragment">
+
+    <com.mapbox.maps.MapView
+        android:id="@+id/fullscreenMapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:mapbox_locationComponentEnabled="true"
+        app:mapbox_locationComponentPuckBearing="heading" />
+</FrameLayout>

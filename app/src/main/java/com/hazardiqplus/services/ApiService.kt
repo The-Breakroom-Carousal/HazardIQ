@@ -32,13 +32,4 @@ interface ApiService {
     fun predictAirQuality(
         @Body predictRequest: PredictRequest
     ): Call<PredictResponse>
-
-    @GET("api/aqi-nearby")
-    fun getNearbyAQI(
-        @Query("lat") lat: Double,
-        @Query("lon") lon: Double,
-        @Query("radius") radius: Int = 10
-    ): Call<NearbyAQIResponse>
-
-
 }

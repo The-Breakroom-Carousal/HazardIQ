@@ -12,7 +12,7 @@ object AirQualityApiClient {
         suspend fun getAQIHourly(
             @Query("latitude") latitude: Double,
             @Query("longitude") longitude: Double,
-            @Query("hourly") hourly: String = "pm10,pm2_5",
+            @Query("hourly") hourly: String = "pm10,pm2_5,carbon_monoxide,ozone,nitrogen_dioxide,sulphur_dioxide",
             @Query("timezone") timezone: String = "auto"
         ): AQIResponse
     }

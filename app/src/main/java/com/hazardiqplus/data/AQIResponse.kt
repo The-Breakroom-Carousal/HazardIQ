@@ -11,11 +11,13 @@ data class AQIResponse(
 data class HourlyAQIData(
     val time: List<String>,
     val pm10: List<Double>,
-
-    // Explicitly map the JSON key "pm2_5" to the Kotlin property "pm25"
-    @SerializedName("pm2_5")
-    val pm25: List<Double>
+    val pm2_5: List<Double>,
+    val carbon_monoxide: List<Double>,
+    val ozone: List<Double>,
+    val nitrogen_dioxide: List<Double>,
+    val sulphur_dioxide: List<Double>
 )
+
 data class WeatherResponse(
     val current: CurrentWeather
 ) {

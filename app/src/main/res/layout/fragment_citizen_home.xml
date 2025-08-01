@@ -8,83 +8,169 @@
     android:layout_height="match_parent"
     tools:context=".ui.citizen.fragments.home.CitizenHomeFragment">
 
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/tvCityName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="You are in:"
-            android:textSize="16sp"
-            android:padding="8dp"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal" />
-
-        <TextView
-            android:id="@+id/tvRange"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Range: 10 km"
-            android:layout_gravity="center_horizontal"
-            android:padding="4dp" />
-
-        <SeekBar
-            android:id="@+id/seekBarRange"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:max="50"
-            android:progress="10" />
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-        <Spinner
-            android:id="@+id/optionSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp" />
+            <TextView
+                android:id="@+id/tvCity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                android:textSize="24sp"
+                android:layout_marginStart="8dp"
+                android:text="City"/>
 
-        <TextView
-            android:id="@+id/tvAqiText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="AQI: --"
-            android:textSize="13sp"
-            android:padding="4dp"
-            android:layout_gravity="center_horizontal" />
+            <TextView
+                android:id="@+id/tvAqi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="64sp"
+                android:layout_marginStart="8dp"
+                android:text="45"/>
 
-        <com.mapbox.maps.MapView
-            android:id="@+id/mapView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            app:mapbox_locationComponentEnabled="true"
-            app:mapbox_locationComponentPuckBearing="heading" />
-    </LinearLayout>
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/aqi_24px" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        android:gravity="center"
-        android:background="@android:color/transparent">
+            <TextView
+                android:id="@+id/tvAqiStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:layout_marginStart="8dp"
+                android:text="Good"/>
 
-        <Button
-            android:id="@+id/btnSafeRoutes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Safe Routes"
-            android:layout_marginEnd="12dp" />
+            <TextView
+                android:id="@+id/tvTemperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:layout_marginStart="8dp"
+                android:text="26 *C"/>
 
-        <Button
-            android:id="@+id/hazard"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Hazard Test" />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/tvWeather"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:layout_marginStart="8dp"
+                android:text="Thunderstorm"/>
+
+            <TextView
+                android:id="@+id/tvCurrentTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:layout_marginStart="8dp"
+                android:text="Sun, 10:18 am"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginBottom="8dp"
+                android:padding="24dp"
+                android:background="@drawable/card_background"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvAqiHL"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="20sp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="12dp"
+                    android:text="Highs 103 to 127 and lows 23 to 35"/>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#CCCCCC"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/hrvPredictedAqi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:padding="16dp"
+                android:background="@drawable/card_background"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="20sp"
+                        android:layout_marginBottom="12dp"
+                        android:text="Radar and maps"/>
+
+                    <ImageView
+                        android:id="@+id/btnFullScreenMap"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:clickable="true"
+                        android:src="@drawable/fullscreen_24px" />
+                </LinearLayout>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:cardCornerRadius="16dp">
+
+                    <com.mapbox.maps.MapView
+                        android:id="@+id/mapView"
+                        android:layout_width="match_parent"
+                        android:layout_height="400dp"
+                        app:mapbox_locationComponentEnabled="true"
+                        app:mapbox_locationComponentPuckBearing="heading" />
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center"
+                android:background="@android:color/transparent">
+
+                <Button
+                    android:id="@+id/btnSafeRoutes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Safe Routes"
+                    android:layout_marginEnd="12dp" />
+
+                <Button
+                    android:id="@+id/hazard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hazard Test" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <com.google.android.material.loadingindicator.LoadingIndicator
         android:id="@+id/loadingIndicator"
