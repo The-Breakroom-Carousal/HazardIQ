@@ -2,36 +2,40 @@ const express = require('express');
 const router = express.Router();
 const pool  = require('../db');
 require('dotenv').config();
-router.post('/save-hazard',async(req,res)=>{
-    
-  const {  rad, hazard, lat, lng } = req.body;
+router.post('/save-hazard', async (req, res) => {
+  const { rad, hazard, lat, lng } = req.body;
+  console.log('save-hazard payload:', { rad, hazard, lat, lng });
+
   if (!rad || !hazard || isNaN(lat) || isNaN(lng)) {
+    console.warn('Missing or invalid data');
     return res.status(400).json({ 
       error: 'Missing required fields: rad, hazard, lat, lon' 
     });
   }
-  try{
+
+  try {
     await pool.query(
-      `INSERT INTO hazard_data 
-       (rad,hazard, latitude, longitude)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO hazard_data (rad, hazard, latitude, longitude) VALUES ($1, $2, $3, $4)`,
       [rad, hazard, lat, lng]
     );
-
+    console.log('Hazard saved successfully');
     res.json({ success: true });
-    } catch (err) {
-        console.error('hazard saving Error:', err.message, err.stack);
-        res.status(500).json({ 
-        error: 'hazard saving failed',
-        details: err.message,
-        stack: err.stack
-        });
-    }
+  } catch (err) {
+    console.error('hazard saving Error:', err.message, err.stack);
+    res.status(500).json({ 
+      error: 'hazard saving failed',
+      details: err.message,
+      stack: err.stack
     });
-router.post('/find-hazard',async(req,res)=>{
-    const { lat, lon, radius = 10 } = req.query;
+  }
+});
+
+router.post('/find-hazard', async (req, res) => {
+  const { lat, lon, radius = 10 } = req.query;
+  console.log('find-hazard query:', { lat, lon, radius });
 
   if (isNaN(lat) || isNaN(lon)) {
+    console.warn('Invalid coordinates');
     return res.status(400).json({ error: 'Invalid coordinates' });
   }
 
@@ -42,12 +46,14 @@ router.post('/find-hazard',async(req,res)=>{
       ORDER BY timestamp DESC LIMIT 50
     `, [lat, lon, radius]);
 
+    console.log(`Hazards found: ${result.rows.length}`);
     res.json({ success: true, data: result.rows });
   } catch (err) {
     console.error('Database Error:', err.message);
     res.status(500).json({ error: 'Failed to fetch hazard data' });
   }
 });
+
 
 module.exports = router;
 
