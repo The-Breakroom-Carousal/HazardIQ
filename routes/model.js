@@ -30,37 +30,7 @@ const config = {
 };
 
 const supportedCities = {
-  "AndhraPradesh": ["Amravati", "Anantapur", "Chittoor", "Kadapa", "Rajamahendravaram", "Tirupati", "Vijayawada", "Visakhapatnam"],
-  "ArunachalPradesh": ["Naharlagun"],
-  "Assam": ["Guwahati", "Nagaon", "Nalbari", "Silchar"],
-  "Bihar": ["Araria", "Arrah", "Aurangabad", "Begusarai", "Bettiah", "Bhagalpur", "Chhapra", "Gaya", "Patna"],
-  "Chandigarh": ["Chandigarh"],
-  "Chattisgarh": ["Bhilai", "Bilaspur", "Chhal", "Korba", "Milupara", "Raipur"],
-  "Delhi": ["Delhi"],
-  "Gujarat": ["Ahmedabad", "Ankleshwar", "Gandhinagar", "Nandesari", "Surat", "Vapi"],
-  "Haryana": ["Ambala", "Bahadurgarh", "Ballabgarh", "Bhiwani", "Faridabad", "Fatehabad", "Gurugram", "Panipat", "Sirsa", "Sonipat"],
-  "HimachalPradesh": ["Baddi"],
-  "JK": ["Srinagar"],
-  "Jharkhand": ["Dhanbad"],
-  "Karnataka": ["Bengaluru", "Belgaum", "Dharwad", "Mangalore", "Mysuru", "Ramanagara", "Udupi", "Vijayapura"],
-  "Kerala": ["Kannur", "Thiruvananthapuram", "Thrissur"],
-  "MadhyaPradesh": ["Bhopal", "Dewas", "Gwalior", "Indore", "Ratlam", "Ujjain"],
-  "Maharashtra": ["Aurangabad", "Amravati", "Chandrapur", "Mumbai", "Nagpur", "Nashik", "Navimumbai", "Pune"],
-  "Manipur": ["Imphal"],
-  "Meghalaya": ["Shillong"],
-  "Mizoram": ["Aizawl"],
-  "Nagaland": ["Kohima"],
-  "Odisha": ["Angul", "Balasore", "Bhubaneswar", "Cuttack", "Rourkela", "Suakati"],
-  "Puducherry": ["Puducherry"],
-  "Punjab": ["Amritsar", "Bathinda", "Jalandhar", "Khanna", "Ludhiana", "Patiala", "Rupnagar"],
-  "Rajasthan": ["Ajmer", "Alwar", "Bikaner", "Jaipur", "Jaisalmer", "Kota", "Sikar"],
-  "Sikkim": ["Gangtok"],
-  "TamilNadu": ["Chennai", "Coimbatore", "Ooty", "Ramanathapuram", "Vellore"],
-  "Telangana": ["Hyderabad"],
-  "Tripura": ["Agartala"],
-  "UttarPradesh": ["Agra", "Kanpur", "Lucknow", "Varanasi", "Vrindavan"],
-  "Uttarakhand": ["Dehradun", "Kashipur", "Rishikesh"],
-  "WestBengal": ["Asansol", "Kolkata", "Siliguri"]
+  // ... (keep your existing supportedCities object)
 };
 
 // Middleware
@@ -151,22 +121,44 @@ async function callPredictAPI(input) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        timeout: 10000
       }
     );
-    return response.data;
+
+    // Validate response structure
+    if (!response.data || !response.data.prediction) {
+      throw new Error('Invalid prediction API response structure');
+    }
+
+    // Safely extract values with defaults
+    const pred = response.data.prediction;
+    return {
+      PM25: typeof pred.PM25 === 'number' ? pred.PM25 : 0,
+      PM10: typeof pred.PM10 === 'number' ? pred.PM10 : 0,
+      Ozone: typeof pred.Ozone === 'number' ? pred.Ozone : 0,
+      CO: typeof pred.CO === 'number' ? pred.CO : 0,
+      NO2: typeof pred.NO2 === 'number' ? pred.NO2 : 0,
+      SO2: typeof pred.SO2 === 'number' ? pred.SO2 : 0
+    };
   } catch (err) {
     console.error('Predict API Error:', {
       status: err.response?.status,
       data: err.response?.data,
       input: input
     });
-    throw err;
+    return {
+      PM25: 0,
+      PM10: 0,
+      Ozone: 0,
+      CO: 0,
+      NO2: 0,
+      SO2: 0
+    };
   }
 }
 
 function calculateAQI(pollutants) {
-  // EPA AQI breakpoints and calculations for multiple pollutants
   const breakpoints = {
     pm25: [
       [0, 12, 0, 50],
@@ -260,7 +252,6 @@ router.post('/predict-air-quality', async (req, res) => {
   }
 
   try {
-    // Fetch more historical data for better predictions
     const [delay1, delay2, delay3, weather] = await Promise.all([
       fetchPollutionData(lat, lon, 1),
       fetchPollutionData(lat, lon, 2),
@@ -279,7 +270,6 @@ router.post('/predict-air-quality', async (req, res) => {
     };
 
     for (let h = 1; h <= Math.min(hours, config.maxPredictionHours); h++) {
-      // Get weather forecast for this hour if available
       const forecastHour = new Date();
       forecastHour.setHours(forecastHour.getHours() + h);
       const forecastIndex = weather.hourly.time.findIndex(t => 
@@ -314,47 +304,49 @@ router.post('/predict-air-quality', async (req, res) => {
       };
 
       const prediction = await callPredictAPI(input);
-      const { PM25, PM10, Ozone, CO, NO2, SO2 } = prediction.prediction;
 
       // Update history for next prediction
-      pollutionHistory.pm25 = [pollutionHistory.pm25[1], pollutionHistory.pm25[2], PM25];
-      pollutionHistory.pm10 = [pollutionHistory.pm10[1], pollutionHistory.pm10[2], PM10];
-      pollutionHistory.ozone = [pollutionHistory.ozone[1], pollutionHistory.ozone[2], Ozone || 0];
-      pollutionHistory.co = [pollutionHistory.co[1], pollutionHistory.co[2], CO || 0];
-      pollutionHistory.no2 = [pollutionHistory.no2[1], pollutionHistory.no2[2], NO2 || 0];
-      pollutionHistory.so2 = [pollutionHistory.so2[1], pollutionHistory.so2[2], SO2 || 0];
+      pollutionHistory.pm25 = [pollutionHistory.pm25[1], pollutionHistory.pm25[2], prediction.PM25];
+      pollutionHistory.pm10 = [pollutionHistory.pm10[1], pollutionHistory.pm10[2], prediction.PM10];
+      pollutionHistory.ozone = [pollutionHistory.ozone[1], pollutionHistory.ozone[2], prediction.Ozone];
+      pollutionHistory.co = [pollutionHistory.co[1], pollutionHistory.co[2], prediction.CO];
+      pollutionHistory.no2 = [pollutionHistory.no2[1], pollutionHistory.no2[2], prediction.NO2];
+      pollutionHistory.so2 = [pollutionHistory.so2[1], pollutionHistory.so2[2], prediction.SO2];
 
       predictions.push({
         hourAhead: h,
-        PM25,
-        PM10,
-        Ozone: Ozone || 0,
-        CO: CO || 0,
-        NO2: NO2 || 0,
-        SO2: SO2 || 0,
+        PM25: prediction.PM25,
+        PM10: prediction.PM10,
+        Ozone: prediction.Ozone,
+        CO: prediction.CO,
+        NO2: prediction.NO2,
+        SO2: prediction.SO2,
         AQI: calculateAQI({
-          pm25: PM25,
-          pm10: PM10,
-          ozone: Ozone || 0,
-          co: CO || 0,
-          no2: NO2 || 0,
-          so2: SO2 || 0
+          pm25: prediction.PM25,
+          pm10: prediction.PM10,
+          ozone: prediction.Ozone,
+          co: prediction.CO,
+          no2: prediction.NO2,
+          so2: prediction.SO2
         }),
-        weather: hourlyWeather
+        weather: hourlyWeather,
+        predictionSource: prediction.PM25 === 0 ? 'fallback' : 'api'
       });
     }
 
     await pool.query(
       `INSERT INTO air_quality_predictions 
-       (city, state, latitude, longitude, pm25_prediction, pm10_prediction, ozone, co, no2, so2, aqi, weather_data)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+       (city, state, latitude, longitude, pm25_prediction, pm10_prediction, 
+        ozone, co, no2, so2, aqi, weather_data, prediction_source)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
         city, state, lat, lon, 
         predictions[0].PM25, predictions[0].PM10,
         predictions[0].Ozone, predictions[0].CO,
         predictions[0].NO2, predictions[0].SO2,
         predictions[0].AQI,
-        JSON.stringify(predictions[0].weather)
+        JSON.stringify(predictions[0].weather),
+        predictions[0].predictionSource
       ]
     );
 
