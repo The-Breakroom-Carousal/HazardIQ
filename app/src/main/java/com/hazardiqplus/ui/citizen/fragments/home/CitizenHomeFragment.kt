@@ -65,6 +65,7 @@ import java.util.*
 import androidx.core.graphics.scale
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.location.GeofencingClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
@@ -105,6 +106,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private var currentLat: Double? = null
     private var currentLon: Double? = null
     data class AQIData(val pm25: Double, val pm10: Double)
+    private lateinit var geofencingClient: GeofencingClient
     private data class WeatherData(
         val temperature: Double,
         val weatherCode: Int,
@@ -774,19 +776,39 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         lifecycleScope.launch(Dispatchers.Default) {
             try {
                 val model = Model.newInstance(requireContext())
-                val input = preprocessImage(bitmap)
-                val output = model.process(input)
-                val results = output.outputFeature0AsTensorBuffer.floatArray
+                val resized = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
+                val floatValues = FloatArray(224 * 224 * 3)
+                val intValues = IntArray(224 * 224)
+                resized.getPixels(intValues, 0, 224, 0, 0, 224, 224)
+                for (i in intValues.indices) {
+                    val pixel = intValues[i]
+                    floatValues[i * 3 + 0] = ((pixel shr 16 and 0xFF) / 255.0f) // R
+                    floatValues[i * 3 + 1] = ((pixel shr 8 and 0xFF) / 255.0f)  // G
+                    floatValues[i * 3 + 2] = ((pixel and 0xFF) / 255.0f)        // B
+                }
+                val chw = FloatArray(3 * 224 * 224)
+                for (y in 0 until 224) {
+                    for (x in 0 until 224) {
+                        for (c in 0 until 3) {
+                            chw[c * 224 * 224 + y * 224 + x] =
+                                floatValues[y * 224 * 3 + x * 3 + c]
+                        }
+                    }
+                }
+                val inputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 3, 224, 224), DataType.FLOAT32)
+                inputBuffer.loadArray(chw)
+                val outputs = model.process(inputBuffer)
+                val result = outputs.outputFeature0AsTensorBuffer.floatArray
+                val predictedIndex = result.indices.maxByOrNull { result[it] } ?: -1
                 model.close()
 
-                val (maxIndex, confidence) = results.getTopPrediction()
                 withContext(Dispatchers.Main) {
                     val textInputView = View.inflate(this@CitizenHomeFragment.requireContext(), R.layout.dialouge_text_input, null)
                     val input = textInputView.findViewById<TextInputEditText>(R.id.textInput)
                     input.hint = "Enter hazard Radius in km"
 
                     val dialog = MaterialAlertDialogBuilder(this@CitizenHomeFragment.requireContext())
-                        .setTitle("It has detected a ${labels.getOrElse(maxIndex) { "Unknown" }} hazard. Enter its radius of catastrophe.")
+                        .setTitle("It has detected a ${labels.getOrElse(predictedIndex) { "Unknown" }} hazard. Enter its radius of catastrophe.")
                         .setView(textInputView)
                         .setPositiveButton("Proceed", null)
                         .setNegativeButton("Cancel", null)
@@ -797,7 +819,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                         val radius = input.text.toString().trim()
                         if (radius.isNotBlank()) {
-                            registerHazard(radius.toDouble(), labels.getOrElse(maxIndex) { "Unknown" })
+                            registerHazard(radius.toDouble(), labels.getOrElse(predictedIndex) { "Unknown" })
                             dialog.dismiss()
                         } else {
                             input.error = "Enter a valid radius"
