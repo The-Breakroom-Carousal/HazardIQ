@@ -797,7 +797,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                         val radius = input.text.toString().trim()
                         if (radius.isNotBlank()) {
-                            registerHazard(radius.toInt(), labels.getOrElse(maxIndex) { "Unknown" })
+                            registerHazard(radius.toDouble(), labels.getOrElse(maxIndex) { "Unknown" })
                             dialog.dismiss()
                         } else {
                             input.error = "Enter a valid radius"
@@ -812,7 +812,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         }
     }
 
-    private fun registerHazard(radius: Int, hazard: String) {
+    private fun registerHazard(radius: Double, hazard: String) {
         val request = SaveHazardRequest(radius, currentLat!!, currentLon!!, hazard)
 
         RetrofitClient.instance.registerHazard(request)
