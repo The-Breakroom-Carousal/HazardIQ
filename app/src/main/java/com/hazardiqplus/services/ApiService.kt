@@ -1,17 +1,16 @@
 package com.hazardiqplus.services
 
-import com.hazardiqplus.data.AQIResponse
-import com.hazardiqplus.data.NearbyAQIResponse
+import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
+import com.hazardiqplus.data.SaveHazardRequest
+import com.hazardiqplus.data.SaveHazardResponse
 import com.hazardiqplus.data.SosRequest
 import com.hazardiqplus.data.SosResponse
 import com.hazardiqplus.data.User
 import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
-import com.hazardiqplus.data.WeatherResponse
 import retrofit2.Call
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -29,7 +28,15 @@ interface ApiService {
     fun sendSosAlert(@Body sendSosRequest: SosRequest): Call<SosResponse>
 
     @POST("api/predict-air-quality")
-    fun predictAirQuality(
-        @Body predictRequest: PredictRequest
-    ): Call<PredictResponse>
+    fun predictAirQuality(@Body predictRequest: PredictRequest): Call<PredictResponse>
+
+    @POST("api/save-hazard")
+    fun registerHazard(@Body saveHazardRequest: SaveHazardRequest): Call<SaveHazardResponse>
+
+    @GET("api/find-hazard")
+    fun findHazard(
+        @Query("lat") lat: Double?,
+        @Query("lon") lon: Double?,
+        @Query("radius") radius: Int
+    ): Call<FindHazardResponse>
 }

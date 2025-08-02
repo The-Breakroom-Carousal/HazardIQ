@@ -47,10 +47,20 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import androidx.core.graphics.createBitmap
+import com.google.android.material.loadingindicator.LoadingIndicator
+import com.google.android.material.snackbar.Snackbar
+import com.hazardiqplus.clients.RetrofitClient
+import com.hazardiqplus.data.FindHazardResponse
+import com.mapbox.maps.extension.style.layers.Layer
+import com.mapbox.maps.extension.style.layers.getLayer
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
 
     private lateinit var mapView: MapView
+    private lateinit var mapLoadingIndicator: LoadingIndicator
     private val cityCapitals = listOf(
         CityPoint("Delhi", 28.6139, 77.2090),
         CityPoint("Mumbai", 19.0760, 72.8777),
@@ -84,6 +94,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_full_screen_map, container, false)
         mapView = view.findViewById(R.id.fullscreenMapView)
+        mapLoadingIndicator = view.findViewById(R.id.mapLoadingIndicator)
         mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS)
         return view
     }
@@ -92,6 +103,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
         super.onViewCreated(view, savedInstanceState)
 
         mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS){ style ->
+            mapLoadingIndicator.visibility = View.VISIBLE
             lifecycleScope.launchWhenStarted {
                 val aqiFeatures = mutableListOf<Feature>()
                 loadCurrentAQIofUser(aqiFeatures)
@@ -107,11 +119,41 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                 updateAqiMapFeatures(aqiFeatures)
 
                 val hazardFeatures = mutableListOf<Feature>()
-                val feature = Feature.fromGeometry(Point.fromLngLat(86.43, 23.81))
-                feature.addNumberProperty("radius", 10)
-                feature.addStringProperty("hazard", "Flood")
-                hazardFeatures.add(feature)
-                updateHazardFeatures(hazardFeatures)
+                RetrofitClient.instance.findHazard(23.51, 80.32, 2000)
+                    .enqueue(object : Callback<FindHazardResponse> {
+                        override fun onResponse(
+                            call: Call<FindHazardResponse?>,
+                            response: Response<FindHazardResponse?>
+                        ) {
+                            if (response.isSuccessful && response.body()?.success == true) {
+                                Log.d("Hazard", "Loaded hazard: ${response.body()}")
+                                response.body()?.data?.forEach { hazard ->
+                                    val feature = Feature.fromGeometry(Point.fromLngLat(hazard.longitude, hazard.latitude))
+                                    feature.addNumberProperty("radius", hazard.rad)
+                                    feature.addStringProperty("hazard", hazard.hazard)
+                                    hazardFeatures.add(feature)
+                                }
+                                updateHazardFeatures(hazardFeatures)
+                            }
+                        }
+
+                        override fun onFailure(
+                            call: Call<FindHazardResponse?>,
+                            t: Throwable
+                        ) {
+                            Log.e("Hazard", "Failed to load hazard", t)
+                            Snackbar.make(requireView(), "Failed to load hazard", Snackbar.LENGTH_SHORT).show()
+                        }
+                    })
+                withContext(Dispatchers.Main) {
+                    mapLoadingIndicator.animate()
+                        .alpha(0f)
+                        .setDuration(250)
+                        .withEndAction {
+                            mapLoadingIndicator.visibility = View.GONE
+                        }
+                        .start()
+                }
             }
         }
     }
@@ -234,6 +276,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
         val pointFeatures = mutableListOf<Feature>()
 
         for (hazard in features) {
+            Log.d("Hazard", "$hazard")
             val point = hazard.geometry() as? Point ?: continue
             val radiusKm = hazard.getNumberProperty("radius")?.toDouble() ?: 1.0
             val hazardType = hazard.getStringProperty("hazard") ?: "Hazard"
@@ -276,6 +319,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
         style.addLayer(
             symbolLayer("hazard-symbol-layer", "hazard-point-source") {
                 iconImage("hazard-icon")
+                iconColor("#FFFFFF")
                 iconSize(1.0)
                 iconAllowOverlap(true)
                 iconIgnorePlacement(true)
@@ -283,6 +327,8 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
         )
 
         // Label above icon
+        val labelLayer = style.getLayer("hazard-label-layer")
+        if (labelLayer !is Layer)
         style.addLayer(
             symbolLayer("hazard-label-layer", "hazard-point-source") {
                 textField(Expression.get("hazard"))
@@ -305,18 +351,13 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                     sdf.timeZone = TimeZone.getTimeZone("UTC")
                     val currentHourString = sdf.format(Date())
 
-                    Log.d("AQI_DEBUG", "Looking for timestamp: $currentHourString")
-                    Log.d("AQI_DEBUG", "Sample response times: ${response.hourly.time.take(5)}")
-
                     val index = response.hourly.time.indexOf(currentHourString)
 
                     if (index != -1) {
                         val pm25Value = response.hourly.pm2_5.getOrNull(index) ?: 0.0
                         val pm10Value = response.hourly.pm10.getOrNull(index) ?: 0.0
-                        Log.d("AQI_DEBUG", "Matched PM2.5: $pm25Value, PM10: $pm10Value")
                         AQIData(pm25 = pm25Value, pm10 = pm10Value)
                     } else {
-                        Log.w("AQI_DEBUG", "Hour not found, fallback to first index")
                         val pm25Value = response.hourly.pm2_5.firstOrNull() ?: 0.0
                         val pm10Value = response.hourly.pm10.firstOrNull() ?: 0.0
                         AQIData(pm25 = pm25Value, pm10 = pm10Value)

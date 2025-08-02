@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
@@ -22,6 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.graphics.createBitmap
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.LocationServices
@@ -68,10 +70,14 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.hazardiqplus.adapters.PredictedAqi
 import com.hazardiqplus.adapters.PredictedAqiAdapter
-import com.hazardiqplus.data.HourlyAQIData
+import com.hazardiqplus.data.FindHazardResponse
+import com.hazardiqplus.data.SaveHazardRequest
+import com.hazardiqplus.data.SaveHazardResponse
 import com.hazardiqplus.ui.citizen.fragments.FullScreenMapFragment
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.turf.TurfConstants
+import com.mapbox.turf.TurfTransformation
 import kotlin.math.sin as kSin
 import kotlin.math.cos as kCos
 import kotlin.math.sqrt as kSqrt
@@ -144,7 +150,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         return view
     }
 
-    private fun loadCurrentAQI() {
+    private fun loadViews() {
         loadingIndicator.visibility = View.VISIBLE
         clearMap()
         Log.d("LatLon", "Current Lat: $currentLat, Current Lon: $currentLon")
@@ -155,6 +161,8 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                         val features = mutableListOf<Feature>()
                         loadCurrentAQIofUser(currentLat!!, currentLon!!, features)
                         updateMapFeatures(features, "aqi-layer", "aqi-source")
+                        val hazardFeatures = mutableListOf<Feature>()
+                        loadHazardInUserLocation(currentLat, currentLon, hazardFeatures)
                         withContext(Dispatchers.Main) {
                             loadingIndicator.animate()
                                 .alpha(0f)
@@ -206,7 +214,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 val feature = Feature.fromGeometry(Point.fromLngLat(lon, lat))
                 feature.addNumberProperty("aqi", aqi)
                 feature.addStringProperty("label", "$city | AQI: $aqi")
-
                 features.add(feature)
             } else {
                 tvAqi.text = "--"
@@ -217,6 +224,34 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         }
     }
 
+    private fun loadHazardInUserLocation(currentLat: Double?, currentLon: Double?, hazardFeatures: MutableList<Feature>) {
+        RetrofitClient.instance.findHazard(currentLat, currentLon, 100)
+            .enqueue(object : Callback<FindHazardResponse> {
+                override fun onResponse(
+                    call: Call<FindHazardResponse?>,
+                    response: Response<FindHazardResponse?>
+                ) {
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        Log.d("Hazard", "Loaded hazard: ${response.body()}")
+                        response.body()?.data?.forEach { hazard ->
+                            val feature = Feature.fromGeometry(Point.fromLngLat(hazard.longitude, hazard.latitude))
+                            feature.addNumberProperty("radius", hazard.rad)
+                            feature.addStringProperty("label", hazard.hazard)
+                            hazardFeatures.add(feature)
+                        }
+                        updateMapFeatures(hazardFeatures, "hazard-layer", "hazard-source")
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<FindHazardResponse?>,
+                    t: Throwable
+                ) {
+                    Log.e("Hazard", "Failed to load hazard", t)
+                    Snackbar.make(requireView(), "Failed to load hazard", Snackbar.LENGTH_SHORT).show()
+                }
+            })
+    }
     private fun updateMapFeatures(features: List<Feature>, layerId: String, sourceId: String) {
         mapView.mapboxMap.getStyle { style ->
             val featureCollection = FeatureCollection.fromFeatures(features)
@@ -230,35 +265,103 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     featureCollection(featureCollection)
                 })
             }
-            style.addLayer(
-                circleLayer(layerId, sourceId) {
-                    circleRadius(100.0)
-                    circleColor(
-                        interpolate {
-                            linear()
-                            get { literal("aqi") }
-                            stop { literal(0); rgb(0.0, 255.0, 0.0) }
-                            stop { literal(50); rgb(155.0, 255.0, 0.0) }
-                            stop { literal(100); rgb(255.0, 255.0, 0.0) }
-                            stop { literal(150); rgb(255.0, 126.0, 0.0) }
-                            stop { literal(200); rgb(255.0, 0.0, 0.0) }
-                            stop { literal(300); rgb(153.0, 0.0, 76.0) }
-                            stop { literal(500); rgb(126.0, 0.0, 35.0) }
-                        }
-                    )
-                    circleOpacity(0.6)
+            if (sourceId == "aqi-source") {
+                style.addLayer(
+                    circleLayer(layerId, sourceId) {
+                        circleRadius(100.0)
+                        circleColor(
+                            interpolate {
+                                linear()
+                                get { literal("aqi") }
+                                stop { literal(0); rgb(0.0, 255.0, 0.0) }
+                                stop { literal(50); rgb(155.0, 255.0, 0.0) }
+                                stop { literal(100); rgb(255.0, 255.0, 0.0) }
+                                stop { literal(150); rgb(255.0, 126.0, 0.0) }
+                                stop { literal(200); rgb(255.0, 0.0, 0.0) }
+                                stop { literal(300); rgb(153.0, 0.0, 76.0) }
+                                stop { literal(500); rgb(126.0, 0.0, 35.0) }
+                            }
+                        )
+                        circleOpacity(0.6)
+                    }
+                )
+                style.addLayer(
+                    symbolLayer("${layerId}-label", sourceId) {
+                        textField(Expression.get("label"))
+                        textSize(12.0)
+                        textColor("#000000")
+                        textHaloColor("#FFFFFF")
+                        textHaloWidth(1.0)
+                        textOffset(listOf(0.0, 1.5))
+                    }
+                )
+            } else if (sourceId == "hazard-source") {
+                Log.d("Hazard", "Showing Hazards")
+                // Build separate feature lists
+                val polygonFeatures = mutableListOf<Feature>()
+                val pointFeatures = mutableListOf<Feature>()
+
+                for (hazard in features) {
+                    val point = hazard.geometry() as? Point ?: continue
+                    val radiusKm = hazard.getNumberProperty("radius")?.toDouble() ?: 1.0
+                    val hazardType = hazard.getStringProperty("label") ?: "Hazard"
+
+                    // Polygon for radius
+                    val polygon = TurfTransformation.circle(point, radiusKm * 1000, 64, TurfConstants.UNIT_METERS)
+                    val polygonFeature = Feature.fromGeometry(polygon)
+                    polygonFeature.addStringProperty("hazard", hazardType)
+                    polygonFeatures.add(polygonFeature)
+
+                    // Point for icon and label
+                    val pointFeature = Feature.fromGeometry(point)
+                    pointFeature.addStringProperty("hazard", hazardType)
+                    pointFeatures.add(pointFeature)
                 }
-            )
-            style.addLayer(
-                symbolLayer("${layerId}-label", sourceId) {
-                    textField(Expression.get("label"))
-                    textSize(12.0)
-                    textColor("#000000")
-                    textHaloColor("#FFFFFF")
-                    textHaloWidth(1.0)
-                    textOffset(listOf(0.0, 1.5))
+
+                // Add sources
+                style.addSource(geoJsonSource("hazard-polygon-source") {
+                    featureCollection(FeatureCollection.fromFeatures(polygonFeatures))
+                })
+                style.addSource(geoJsonSource("hazard-point-source") {
+                    featureCollection(FeatureCollection.fromFeatures(pointFeatures))
+                })
+
+                // Fill polygon for radius
+                style.addLayer(
+                    com.mapbox.maps.extension.style.layers.generated.fillLayer("hazard-radius-layer", "hazard-polygon-source") {
+                        fillColor("#FF0000")
+                        fillOpacity(0.2)
+                    }
+                )
+
+                // Add hazard icon as bitmap
+                val bitmap = getBitmapFromVectorDrawable(R.drawable.warning_24px)
+                if (bitmap != null && style.getStyleImage("hazard-icon") == null) {
+                    style.addImage("hazard-icon", bitmap)
                 }
-            )
+
+                // Symbol for icon
+                style.addLayer(
+                    symbolLayer("hazard-symbol-layer", "hazard-point-source") {
+                        iconImage("hazard-icon")
+                        iconSize(1.0)
+                        iconAllowOverlap(true)
+                        iconIgnorePlacement(true)
+                    }
+                )
+
+                // Label above icon
+                style.addLayer(
+                    symbolLayer("hazard-label-layer", "hazard-point-source") {
+                        textField(Expression.get("hazard"))
+                        textSize(12.0)
+                        textColor("#000000")
+                        textHaloColor("#FFFFFF")
+                        textHaloWidth(1.2)
+                        textOffset(listOf(0.0, 2.0))
+                    }
+                )
+            }
         }
     }
 
@@ -319,11 +422,9 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 val iLow = aqiLevels[i]
                 val iHigh = aqiLevels[i+1]
                 val subIndex = (((iHigh - iLow)/(cHigh-cLow) * (concentration - cLow) + iLow).toInt())
-                Log.d("AQI", "Concentration=$concentration, Range=[$cLow,$cHigh], SubIndex=$subIndex")
                 return subIndex
             }
         }
-        Log.w("AQI", "Concentration=$concentration beyond severe -> 500")
         return 500 // beyond severe
     }
 
@@ -696,7 +797,8 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                         val radius = input.text.toString().trim()
                         if (radius.isNotBlank()) {
-                            Snackbar.make(requireView(), "Hazard Predicted: ${labels.getOrElse(maxIndex) { "Unknown" }}, Radius: $radius, (${"%.1f".format(confidence * 100)}%)", Snackbar.LENGTH_SHORT).show()
+                            registerHazard(radius.toInt(), labels.getOrElse(maxIndex) { "Unknown" })
+                            dialog.dismiss()
                         } else {
                             input.error = "Enter a valid radius"
                         }
@@ -708,6 +810,30 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
             }
         }
+    }
+
+    private fun registerHazard(radius: Int, hazard: String) {
+        val request = SaveHazardRequest(radius, currentLat!!, currentLon!!, hazard)
+
+        RetrofitClient.instance.registerHazard(request)
+            .enqueue(object : Callback<SaveHazardResponse> {
+                override fun onResponse(
+                    call: Call<SaveHazardResponse>,
+                    response: Response<SaveHazardResponse>
+                ) {
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        Snackbar.make(requireView(), "Hazard registered successfully.", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<SaveHazardResponse?>,
+                    t: Throwable
+                ) {
+                    Log.e("Hazard", "Failed to register hazard", t)
+                    Snackbar.make(requireView(), "Failed to register hazard. Please try again!", Snackbar.LENGTH_SHORT).show()
+                }
+            })
     }
 
     private fun preprocessImage(bitmap: Bitmap): TensorBuffer {
@@ -780,7 +906,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     currentLon = location.longitude
                     updateCityName(location.latitude, location.longitude)
 
-                    loadCurrentAQI()
+                    loadViews()
                     loadWeather()
                     loadForecast()
                 } else {
@@ -810,6 +936,15 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 kSin(dLon / 2).kPow(2)
         val distance = earthRadius * 2 * kAtan2(kSqrt(a), kSqrt(1 - a))
         return distance
+    }
+
+    private fun getBitmapFromVectorDrawable(drawableId: Int): Bitmap? {
+        val drawable = ContextCompat.getDrawable(requireContext(), drawableId) ?: return null
+        val bitmap = createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
     }
 
     override fun onDestroyView() {
