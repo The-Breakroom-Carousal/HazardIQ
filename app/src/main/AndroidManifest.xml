@@ -78,6 +78,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-    </application>
 
+        <receiver android:name=".clients.HazardGeofenceReceiver" android:exported="true"/>
+    </application>
 </manifest>

@@ -2,6 +2,8 @@ package com.hazardiqplus.ui.citizen.fragments.home
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -65,12 +67,17 @@ import java.util.*
 import androidx.core.graphics.scale
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofenceStatusCodes
 import com.google.android.gms.location.GeofencingClient
+import com.google.android.gms.location.GeofencingRequest
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.hazardiqplus.adapters.PredictedAqi
 import com.hazardiqplus.adapters.PredictedAqiAdapter
+import com.hazardiqplus.clients.HazardGeofenceReceiver
 import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.SaveHazardRequest
 import com.hazardiqplus.data.SaveHazardResponse
@@ -227,7 +234,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun loadHazardInUserLocation(currentLat: Double?, currentLon: Double?, hazardFeatures: MutableList<Feature>) {
-        RetrofitClient.instance.findHazard(currentLat, currentLon, 100)
+        RetrofitClient.instance.findHazard(currentLat, currentLon, 2000)
             .enqueue(object : Callback<FindHazardResponse> {
                 override fun onResponse(
                     call: Call<FindHazardResponse?>,
@@ -235,11 +242,12 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 ) {
                     if (response.isSuccessful && response.body()?.success == true) {
                         Log.d("Hazard", "Loaded hazard: ${response.body()}")
-                        response.body()?.data?.forEach { hazard ->
+                        response.body()?.data?.forEachIndexed { index, hazard ->
                             val feature = Feature.fromGeometry(Point.fromLngLat(hazard.longitude, hazard.latitude))
                             feature.addNumberProperty("radius", hazard.rad)
                             feature.addStringProperty("label", hazard.hazard)
                             hazardFeatures.add(feature)
+                            setupHazardGeofence(hazard.latitude, hazard.longitude, hazard.rad, index)
                         }
                         updateMapFeatures(hazardFeatures, "hazard-layer", "hazard-source")
                     }
@@ -615,6 +623,46 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         }
     }
 
+    private fun setupHazardGeofence(lat: Double, lon: Double, radius: Double, index: Int) {
+        geofencingClient = LocationServices.getGeofencingClient(requireContext())
+
+        val geofence = Geofence.Builder()
+            .setRequestId("hazard_zone_$index")
+            .setCircularRegion(lat, lon, (radius * 1000).toFloat()) // meters
+            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+            .setLoiteringDelay(0)
+            .setExpirationDuration(Geofence.NEVER_EXPIRE)
+            .build()
+
+        val geofencingRequest = GeofencingRequest.Builder()
+            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            .addGeofence(geofence)
+            .build()
+
+        val intent = Intent(requireContext(), HazardGeofenceReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            requireContext(),
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        )
+
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            geofencingClient.addGeofences(geofencingRequest, pendingIntent)
+                .addOnSuccessListener { Log.d("HazardGeofence", "Geofence added!") }
+                .addOnFailureListener { e ->
+                    if (e is ApiException) {
+                        Log.e(
+                            "HazardGeofence",
+                            "Failed: ${e.statusCode} ${GeofenceStatusCodes.getStatusCodeString(e.statusCode)}"
+                        )
+                    } else {
+                        Log.e("HazardGeofence", "Failed: ${e.message}")
+                    }
+                }
+        }
+    }
+
     private fun checkLocationPermission() {
         when {
             ContextCompat.checkSelfPermission(
@@ -638,6 +686,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun requestLocationPermission() {
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        locationPermissionRequest.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
     private fun checkCameraPermission() {
@@ -776,7 +825,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         lifecycleScope.launch(Dispatchers.Default) {
             try {
                 val model = Model.newInstance(requireContext())
-                val resized = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
+                val resized = bitmap.scale(224, 224)
                 val floatValues = FloatArray(224 * 224 * 3)
                 val intValues = IntArray(224 * 224)
                 resized.getPixels(intValues, 0, 224, 0, 0, 224, 224)
@@ -856,37 +905,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     Snackbar.make(requireView(), "Failed to register hazard. Please try again!", Snackbar.LENGTH_SHORT).show()
                 }
             })
-    }
-
-    private fun preprocessImage(bitmap: Bitmap): TensorBuffer {
-        val resized = bitmap.scale(224, 224)
-        val inputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 3, 224, 224), DataType.FLOAT32)
-        val floatArray = FloatArray(224 * 224 * 3)
-
-        val pixels = IntArray(224 * 224)
-        resized.getPixels(pixels, 0, 224, 0, 0, 224, 224)
-
-        for (i in pixels.indices) {
-            val pixel = pixels[i]
-            floatArray[i * 3] = ((pixel shr 16) and 0xFF) / 255.0f
-            floatArray[i * 3 + 1] = ((pixel shr 8) and 0xFF) / 255.0f
-            floatArray[i * 3 + 2] = (pixel and 0xFF) / 255.0f
-        }
-
-        inputBuffer.loadArray(floatArray)
-        return inputBuffer
-    }
-
-    private fun FloatArray.getTopPrediction(): Pair<Int, Float> {
-        var maxIndex = 0
-        var maxValue = this[0]
-        for (i in 1 until size) {
-            if (this[i] > maxValue) {
-                maxValue = this[i]
-                maxIndex = i
-            }
-        }
-        return Pair(maxIndex, maxValue)
     }
 
     private fun openCamera() {

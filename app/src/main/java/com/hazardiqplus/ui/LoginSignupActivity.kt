@@ -14,6 +14,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -233,7 +234,7 @@ class LoginSignupActivity : AppCompatActivity() {
 
     private fun checkAndRequestPermission(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(
                     arrayOf(
@@ -242,6 +243,27 @@ class LoginSignupActivity : AppCompatActivity() {
                     ), 101
                 )
             }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Background Location Permission")
+                .setMessage("This app requires background location permission for accurate location tracking.")
+                .setPositiveButton("Grant") { _, _ ->
+                    ActivityCompat.requestPermissions(
+                            this,
+                    arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                    101
+                    )
+                }
+                .setNegativeButton("Deny") { _, _ ->
+                    Toast.makeText(this, "Background location permission denied", Toast.LENGTH_SHORT).show()
+                }
+                .show()
         }
     }
 
