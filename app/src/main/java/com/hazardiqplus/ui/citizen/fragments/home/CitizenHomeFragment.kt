@@ -3,6 +3,7 @@ package com.hazardiqplus.ui.citizen.fragments.home
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -67,6 +68,7 @@ import java.util.*
 import androidx.core.graphics.scale
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.WorkManager
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofenceStatusCodes
@@ -82,6 +84,7 @@ import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.SaveHazardRequest
 import com.hazardiqplus.data.SaveHazardResponse
 import com.hazardiqplus.ui.citizen.fragments.FullScreenMapFragment
+import com.hazardiqplus.utils.WeatherReportScheduler
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.turf.TurfConstants
@@ -154,9 +157,21 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         initViews(view)
         setupCameraLauncher()
         setupPermissions()
+        getUserLocation()
         setupMap()
+        checkAndScheduleAqiReport()
         checkLocationPermission()
         return view
+    }
+
+    private fun checkAndScheduleAqiReport() {
+        val infos = WorkManager.getInstance(requireContext())
+            .getWorkInfosForUniqueWorkLiveData("WeatherReport")
+            .value
+        Log.d("WeatherReport", "Infos: $infos")
+        if (infos.isNullOrEmpty()) {
+            WeatherReportScheduler().scheduleWeatherReport(requireContext())
+        }
     }
 
     private fun loadViews() {
@@ -686,7 +701,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun requestLocationPermission() {
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        locationPermissionRequest.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
     private fun checkCameraPermission() {

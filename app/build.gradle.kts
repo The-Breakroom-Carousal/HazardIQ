@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.androidx.viewpager2)
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.gridlayout)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation("androidx.concurrent:concurrent-futures:1.3.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
