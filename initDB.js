@@ -53,8 +53,6 @@ const hazard_data = async () => {
       longitude DOUBLE PRECISION NOT NULL,
       timestamp TIMESTAMPTZ DEFAULT NOW()
 );
-
-
     `); 
     console.log("✅ Created 'hazard_data' table or already exists");
   } catch (error) {
@@ -106,6 +104,7 @@ const init = async () => {
   await air_quality_predictions();
   await hazard_data();
   await hazardChatTable();
+  await createSosEventsTable();
 };
 
 init();

@@ -111,7 +111,7 @@ router.put('/sos-events/:id/progress', async (req, res) => {
       `UPDATE sos_events SET progress = $1 WHERE id = $2 RETURNING *`,
       [progress, id]
     );
-    
+
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "SOS event not found" });
     }
@@ -122,5 +122,23 @@ router.put('/sos-events/:id/progress', async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+router.delete('/sos-events/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(`DELETE FROM sos_events WHERE id = $1 RETURNING *`, [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "SOS event not found" });
+    }
+
+    res.json({ message: "SOS event deleted", deletedEvent: result.rows[0] });
+  } catch (err) {
+    console.error("❌ Error deleting SOS event:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 
 module.exports = router;
