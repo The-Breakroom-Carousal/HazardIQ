@@ -88,6 +88,7 @@ const createSosEventsTable  = async () => {
         type TEXT NOT NULL,
         latitude DOUBLE PRECISION NOT NULL,
         longitude DOUBLE PRECISION NOT NULL,
+        city TEXT NOT NULL,
         progress TEXT DEFAULT 'pending' CHECK (progress IN ('pending', 'acknowledged', 'resolved')),
         timestamp TIMESTAMPTZ DEFAULT NOW()
       );

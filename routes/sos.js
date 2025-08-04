@@ -17,8 +17,8 @@ router.post('/send-sos', async (req, res) => {
     const uid = decoded.uid;
 
     await pool.query(
-      `INSERT INTO sos_events (firebase_uid, type, latitude, longitude) VALUES ($1, $2, $3, $4)`,
-      [uid, type, lat, lng]
+      `INSERT INTO sos_events (firebase_uid, type, latitude, longitude,city) VALUES ($1, $2, $3, $4,$5)`,
+      [uid, type, lat, lng,city]
     );
 
     const userRes = await pool.query(
@@ -81,14 +81,17 @@ router.post('/send-sos', async (req, res) => {
 });
 
 
-router.get('/sos-events', async (req, res) => {
+router.get('/sos-events/:city', async (req, res) => {
   try {
+    const { city } = req.params;
     const result = await pool.query(`
       SELECT se.*, u.name, u.email 
-      FROM sos_events se
+      FROM sos_events se 
       LEFT JOIN users u ON u.firebase_uid = se.firebase_uid
+      WHERE se.city = $1
       ORDER BY se.timestamp DESC
-    `);
+    `, [city]);
+    
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Error fetching sos events:", err);
