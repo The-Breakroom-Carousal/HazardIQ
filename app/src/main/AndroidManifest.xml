@@ -47,9 +47,6 @@
             android:name=".ui.RoleSelectionActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.ForgotPassword"
-            android:exported="false" />
-        <activity
             android:name=".ui.SignUpActivity"
             android:exported="false" />
         <activity

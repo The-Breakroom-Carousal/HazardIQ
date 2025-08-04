@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -14,6 +15,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
@@ -21,6 +23,7 @@ import com.hazardiqplus.R
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosRequest
 import com.hazardiqplus.data.SosResponse
+import com.hazardiqplus.ui.citizen.fragments.SosFragment
 import com.hazardiqplus.ui.citizen.fragments.home.CitizenHomeFragment
 import retrofit2.Call
 import retrofit2.Callback
@@ -29,8 +32,9 @@ import java.util.Locale
 
 class CitizenMainActivity : AppCompatActivity() {
 
-    private lateinit var btnSOS: FloatingActionButton
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var toggleGroup: MaterialButtonToggleGroup
+    private lateinit var btnHome: Button
+    private lateinit var btnSos: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,75 +46,31 @@ class CitizenMainActivity : AppCompatActivity() {
             insets
         }
 
+        toggleGroup = findViewById(R.id.tabToggleGroup)
+        btnHome = findViewById(R.id.btnHome)
+        btnSos = findViewById(R.id.btnSos)
+
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
                 replace(R.id.fragmentContainer, CitizenHomeFragment())
             }
+            toggleGroup.check(R.id.btnHome)
         }
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        btnSOS = findViewById(R.id.btnSOS)
-
-        btnSOS.setOnClickListener {
-            triggerSosCall()
-        }
-    }
-
-    private fun triggerSosCall() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            Toast.makeText(this, "Location permission not granted", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                val geocoder = Geocoder(this, Locale.getDefault())
-                val addressList = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                val city = addressList?.get(0)?.locality ?: "Unknown"
-
-                Firebase.auth.currentUser?.getIdToken(true)
-                    ?.addOnSuccessListener { result ->
-                        val request = SosRequest(
-                            idToken = result.token ?: "",
-                            type = "Medical Emergency",
-                            city = city,
-                            lat = location.latitude,
-                            lng = location.longitude
-                        )
-                        RetrofitClient.instance.sendSosAlert(request)
-                            .enqueue(object : Callback<SosResponse> {
-                                override fun onResponse(
-                                    call: Call<SosResponse>,
-                                    response: Response<SosResponse>
-                                ) {
-                                    if (response.isSuccessful && response.body()?.success == true) {
-                                        Toast.makeText(
-                                            this@CitizenMainActivity,
-                                            "🚨 SOS Sent to ${response.body()?.sent} responders!",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    } else {
-                                        Log.e("SOS", "Response not successful: ${response.body().toString()}")
-                                        Log.e("SOS", "Response not successful: ${response.errorBody()?.string()}")
-                                        Toast.makeText(this@CitizenMainActivity, "❌ SOS Failed", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<SosResponse>, t: Throwable) {
-                                    Toast.makeText(this@CitizenMainActivity, "Network error", Toast.LENGTH_SHORT).show()
-                                }
-                            })
+        toggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                when (checkedId) {
+                    R.id.btnHome -> {
+                        supportFragmentManager.commit {
+                            replace(R.id.fragmentContainer, CitizenHomeFragment())
+                        }
                     }
-            } else {
-                Toast.makeText(this@CitizenMainActivity, "Location unavailable", Toast.LENGTH_SHORT).show()
+                    R.id.btnSos -> {
+                        supportFragmentManager.commit {
+                            replace(R.id.fragmentContainer, SosFragment())
+                        }
+                    }
+                }
             }
         }
     }
