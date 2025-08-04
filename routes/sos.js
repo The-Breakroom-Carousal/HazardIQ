@@ -9,13 +9,17 @@ const geocoder = NodeGeocoder({
 });
 require('dotenv').config();
 
-
 router.post('/send-sos', async (req, res) => {
   const { idToken, type, city, lat, lng } = req.body;
 
   try {
     const decoded = await admin.auth().verifyIdToken(idToken);
     const uid = decoded.uid;
+
+    await pool.query(
+      `INSERT INTO sos_events (firebase_uid, type, latitude, longitude) VALUES ($1, $2, $3, $4)`,
+      [uid, type, lat, lng]
+    );
 
     const userRes = await pool.query(
       'SELECT name FROM users WHERE firebase_uid = $1',
@@ -28,6 +32,7 @@ router.post('/send-sos', async (req, res) => {
        FROM users 
        WHERE role = 'responder' AND fcm_token IS NOT NULL`
     );
+
 
     const matchingTokens = [];
 
@@ -75,5 +80,47 @@ router.post('/send-sos', async (req, res) => {
   }
 });
 
+
+router.get('/sos-events', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT se.*, u.name, u.email 
+      FROM sos_events se
+      LEFT JOIN users u ON u.firebase_uid = se.firebase_uid
+      ORDER BY se.timestamp DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error fetching sos events:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+router.put('/sos-events/:id/progress', async (req, res) => {
+  const { id } = req.params;
+  const { progress } = req.body;
+
+  const allowed = ['pending', 'acknowledged', 'resolved'];
+  if (!allowed.includes(progress)) {
+    return res.status(400).json({ error: "Invalid progress value" });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE sos_events SET progress = $1 WHERE id = $2 RETURNING *`,
+      [progress, id]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "SOS event not found" });
+    }
+
+    res.json({ message: "Progress updated", event: result.rows[0] });
+  } catch (err) {
+    console.error("❌ Error updating progress:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 module.exports = router;
