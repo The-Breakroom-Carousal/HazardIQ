@@ -131,6 +131,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                                     val feature = Feature.fromGeometry(Point.fromLngLat(hazard.longitude, hazard.latitude))
                                     feature.addNumberProperty("radius", hazard.rad)
                                     feature.addStringProperty("hazard", hazard.hazard)
+                                    feature.addNumberProperty("hazard_id", hazard.id)
                                     hazardFeatures.add(feature)
                                 }
                                 updateHazardFeatures(hazardFeatures)
@@ -280,6 +281,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
             val point = hazard.geometry() as? Point ?: continue
             val radiusKm = hazard.getNumberProperty("radius")?.toDouble() ?: 1.0
             val hazardType = hazard.getStringProperty("hazard") ?: "Hazard"
+            val hazardId = hazard.getNumberProperty("hazard_id")?.toLong() ?: 0L
 
             // Polygon for radius
             val polygon = TurfTransformation.circle(point, radiusKm * 1000, 64, TurfConstants.UNIT_METERS)
@@ -339,6 +341,8 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                 textOffset(listOf(0.0, 2.0))
             }
         )
+
+
     }
 
     suspend fun getLiveAQIData(lat: Double, lon: Double): AQIData {
