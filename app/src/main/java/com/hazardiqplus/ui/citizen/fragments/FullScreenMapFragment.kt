@@ -2,6 +2,7 @@ package com.hazardiqplus.ui.citizen.fragments
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -51,8 +52,17 @@ import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.snackbar.Snackbar
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FindHazardResponse
+import com.hazardiqplus.ui.MainActivity
+import com.mapbox.geojson.Polygon
+import com.mapbox.maps.RenderedQueryGeometry
+import com.mapbox.maps.RenderedQueryOptions
+import com.mapbox.maps.coroutine.queryRenderedFeatures
 import com.mapbox.maps.extension.style.layers.Layer
 import com.mapbox.maps.extension.style.layers.getLayer
+import com.mapbox.maps.extension.style.sources.getSourceAs
+import com.mapbox.maps.plugin.gestures.gestures
+import com.mapbox.turf.TurfJoins
+import com.mapbox.turf.TurfMeasurement
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -342,7 +352,13 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
             }
         )
 
-
+        mapView.gestures.addOnMapLongClickListener { point ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                Log.d("Map", "Long click: $point")
+                handleMapLongClick(point)
+            }
+            true
+        }
     }
 
     suspend fun getLiveAQIData(lat: Double, lon: Double): AQIData {
@@ -375,6 +391,34 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                 AQIData(pm25 = 0.0, pm10 = 0.0)
             }
         }
+    }
+
+    private suspend fun handleMapLongClick(point: Point): Boolean {
+        val screenCoordinate = mapView.mapboxMap.pixelForCoordinate(point)
+        val features = mapView.mapboxMap.queryRenderedFeatures(
+            RenderedQueryGeometry(screenCoordinate),
+            RenderedQueryOptions(listOf("hazard-radius-layer", "hazard-symbol-layer"), null)
+        )
+        if (features.isValue) {
+            val features = features.value ?: emptyList()
+            for (feature in features) {
+                val geometry = feature.queriedFeature.feature.geometry()
+                if (geometry is Polygon) {
+                    Log.d("Map", "Point: $geometry")
+                    val isInside = TurfJoins.inside(point, geometry)
+                    if (isInside) {
+                        withContext(Dispatchers.Main) {
+                            val intent = Intent(requireContext(), MainActivity::class.java)
+                            intent.putExtra("hazard_id", feature.queriedFeature.feature.getNumberProperty("hazard_id"))
+                            intent.putExtra("hazard_type", feature.queriedFeature.feature.getStringProperty("hazard"))
+                            startActivity(intent)
+                        }
+                        return true
+                    }
+                }
+            }
+        }
+        return false
     }
 
     private fun calculateAQI(pm25: Double, pm10: Double): Int {
