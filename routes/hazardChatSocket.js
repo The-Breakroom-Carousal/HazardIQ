@@ -25,35 +25,36 @@ module.exports = function(io) {
     });
 
     socket.on('sendMessage', async ({ hazardId, firebaseToken, message }) => {
-      try {
-        const decoded = await admin.auth().verifyIdToken(firebaseToken);
-        const userId = decoded.uid;
-        const roomName = `hazard-${hazardId}`;
+  try {
+    console.log('🔁 Received sendMessage:', { hazardId, message });
 
-        // Save to DB
-        const result = await pool.query(`
-          INSERT INTO hazard_chat_messages (hazard_id, sender_uid, message)
-          VALUES ($1, $2, $3) RETURNING *;
-        `, [hazardId, userId, message]);
+    const decoded = await admin.auth().verifyIdToken(firebaseToken);
+    const userId = decoded.uid;
+    const roomName = `hazard-${hazardId}`;
+    console.log(`✅ Token valid. UID: ${userId}`);
 
-        const savedMsg = result.rows[0];
+    // Insert into DB
+    const result = await pool.query(`
+      INSERT INTO hazard_chat_messages (hazard_id, sender_uid, message)
+      VALUES ($1, $2, $3) RETURNING *;
+    `, [hazardId, userId, message]);
 
-        // Broadcast to room
-        io.to(roomName).emit('newMessage', {
-          hazardId,
-          senderUid: userId,
-          message,
-          timestamp: savedMsg.timestamp
-        });
+    const savedMsg = result.rows[0];
+    console.log('✅ Message saved to DB:', savedMsg);
 
-      } catch (err) {
-        console.error('❌ sendMessage Error:', err.message);
-        socket.emit('errorSending', { message: 'Message failed to send' });
-      }
+    // Broadcast to room
+    io.to(roomName).emit('newMessage', {
+      hazardId,
+      senderUid: userId,
+      message,
+      timestamp: savedMsg.timestamp
     });
 
-    socket.on('disconnect', () => {
-      console.log('🔴 User disconnected:', socket.id);
-    });
+  } catch (err) {
+    console.error('❌ sendMessage Error:', err.message);
+    socket.emit('errorSending', { message: 'Message failed to send' });
+  }
+});
+
   });
 };

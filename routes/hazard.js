@@ -34,7 +34,7 @@ router.post('/save-hazard', async (req, res) => {
 router.get('/find-hazard', async (req, res) => {
   const { lat, lon, radius = 10 } = req.query;
 
-  console.log('find-hazard query:', { lat, lon, radius });
+  //console.log('find-hazard query:', { lat, lon, radius });
 
   const parsedLat = parseFloat(lat);
   const parsedLon = parseFloat(lon);

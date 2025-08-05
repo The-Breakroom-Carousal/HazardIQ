@@ -60,7 +60,7 @@ const hazard_data = async () => {
   }
 };
 
-
+    
 const hazardChatTable = async () => {
   try {
     await pool.query(`
