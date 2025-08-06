@@ -38,7 +38,6 @@ import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.clients.WeatherApiClient
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
-import com.hazardiqplus.ml.Model
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
@@ -83,6 +82,7 @@ import com.hazardiqplus.clients.HazardGeofenceReceiver
 import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.SaveHazardRequest
 import com.hazardiqplus.data.SaveHazardResponse
+import com.hazardiqplus.ml.BestModel
 import com.hazardiqplus.ui.citizen.fragments.FullScreenMapFragment
 import com.hazardiqplus.utils.WeatherReportScheduler
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
@@ -839,7 +839,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private fun runModel(bitmap: Bitmap) {
         lifecycleScope.launch(Dispatchers.Default) {
             try {
-                val model = Model.newInstance(requireContext())
+                val model = BestModel.newInstance(requireContext())
                 val resized = bitmap.scale(224, 224)
                 val floatValues = FloatArray(224 * 224 * 3)
                 val intValues = IntArray(224 * 224)
@@ -859,6 +859,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                         }
                     }
                 }
+
                 val inputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 3, 224, 224), DataType.FLOAT32)
                 inputBuffer.loadArray(chw)
                 val outputs = model.process(inputBuffer)

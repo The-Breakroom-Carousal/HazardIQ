@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.location.Geocoder
 import android.os.Bundle
@@ -52,7 +51,6 @@ import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.snackbar.Snackbar
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FindHazardResponse
-import com.hazardiqplus.ui.MainActivity
 import com.hazardiqplus.ui.citizen.fragments.home.HazardChatActivity
 import com.mapbox.geojson.Polygon
 import com.mapbox.maps.RenderedQueryGeometry
@@ -60,10 +58,8 @@ import com.mapbox.maps.RenderedQueryOptions
 import com.mapbox.maps.coroutine.queryRenderedFeatures
 import com.mapbox.maps.extension.style.layers.Layer
 import com.mapbox.maps.extension.style.layers.getLayer
-import com.mapbox.maps.extension.style.sources.getSourceAs
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.turf.TurfJoins
-import com.mapbox.turf.TurfMeasurement
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -298,11 +294,13 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
             val polygon = TurfTransformation.circle(point, radiusKm * 1000, 64, TurfConstants.UNIT_METERS)
             val polygonFeature = Feature.fromGeometry(polygon)
             polygonFeature.addStringProperty("hazard", hazardType)
+            polygonFeature.addStringProperty("hazard_id", hazardId.toString())
             polygonFeatures.add(polygonFeature)
 
             // Point for icon and label
             val pointFeature = Feature.fromGeometry(point)
             pointFeature.addStringProperty("hazard", hazardType)
+            pointFeature.addStringProperty("hazard_id", hazardId.toString())
             pointFeatures.add(pointFeature)
         }
 
@@ -342,16 +340,16 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
         // Label above icon
         val labelLayer = style.getLayer("hazard-label-layer")
         if (labelLayer !is Layer)
-        style.addLayer(
-            symbolLayer("hazard-label-layer", "hazard-point-source") {
-                textField(Expression.get("hazard"))
-                textSize(12.0)
-                textColor("#000000")
-                textHaloColor("#FFFFFF")
-                textHaloWidth(1.2)
-                textOffset(listOf(0.0, 2.0))
-            }
-        )
+            style.addLayer(
+                symbolLayer("hazard-label-layer", "hazard-point-source") {
+                    textField(Expression.get("hazard"))
+                    textSize(12.0)
+                    textColor("#000000")
+                    textHaloColor("#FFFFFF")
+                    textHaloWidth(1.2)
+                    textOffset(listOf(0.0, 2.0))
+                }
+            )
 
         mapView.gestures.addOnMapLongClickListener { point ->
             viewLifecycleOwner.lifecycleScope.launch {
@@ -410,7 +408,8 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                     if (isInside) {
                         withContext(Dispatchers.Main) {
                             val intent = Intent(requireContext(), HazardChatActivity::class.java)
-                            intent.putExtra("hazard_id", feature.queriedFeature.feature.getNumberProperty("hazard_id"))
+                            Log.d("Hazard", "Hazard id: ${feature.queriedFeature.feature.getNumberProperty("hazard_id")}")
+                            intent.putExtra("hazard_id", feature.queriedFeature.feature.getStringProperty("hazard_id"))
                             intent.putExtra("hazard_type", feature.queriedFeature.feature.getStringProperty("hazard"))
                             startActivity(intent)
                         }

@@ -29,7 +29,7 @@ class HazardChatActivity : AppCompatActivity() {
     private lateinit var adapter: ChatMessageAdapter
 
     private val messages = ArrayList<ChatMessage>()
-    private lateinit var socket: Socket
+    private var socket: Socket? = null
     private lateinit var hazardId: String
     private lateinit var firebaseAuth: FirebaseAuth
 
@@ -45,7 +45,7 @@ class HazardChatActivity : AppCompatActivity() {
         firebaseAuth = Firebase.auth
 
         val hazardType = intent.getStringExtra("hazard_type") ?: "Hazard"
-        val hazardIdLong = intent.getLongExtra("hazard_id", -1L)
+        val hazardIdLong = intent.getStringExtra("hazard_id")?.toLong() ?:-1
 
         if (hazardIdLong == -1L) {
             Log.e("HazardChat", "Missing or invalid hazard_id in intent")
@@ -74,26 +74,28 @@ class HazardChatActivity : AppCompatActivity() {
     private fun connectSocket() {
         try {
             socket = IO.socket("https://hazardiq-bwxg.onrender.com")
-            socket.connect()
+            socket?.connect()
 
-            socket.on(Socket.EVENT_CONNECT) {
+            socket?.on(Socket.EVENT_CONNECT) {
                 Log.d("SOCKET", "✅ Connected to socket")
                 joinHazardRoom()
             }
 
-            socket.on("joinedRoom") {
+            socket?.on("joinedRoom") {
                 Log.d("SOCKET", "✅ Joined hazard room")
             }
 
-            socket.on("authError") { args ->
+            socket?.on("chatHistory", onChatHistory)
+
+            socket?.on("authError") { args ->
                 runOnUiThread {
                     Log.e("SOCKET", "❌ Auth failed: ${args[0]}")
                 }
             }
 
-            socket.on("newMessage", onNewMessage)
+            socket?.on("newMessage", onNewMessage)
 
-            socket.on(Socket.EVENT_DISCONNECT) {
+            socket?.on(Socket.EVENT_DISCONNECT) {
                 Log.d("SOCKET", "🔌 Disconnected from socket")
             }
 
@@ -102,13 +104,37 @@ class HazardChatActivity : AppCompatActivity() {
         }
     }
 
+    private val onChatHistory = Emitter.Listener { args ->
+        if (args.isNotEmpty()) {
+            val data = args[0] as org.json.JSONArray // The server sends a JSON array
+
+            // Clear the current messages list before adding history
+            // This prevents duplication if the activity is not fully destroyed
+            messages.clear()
+
+            for (i in 0 until data.length()) {
+                val item = data.getJSONObject(i)
+                val message = item.getString("message")
+                val sender = item.getString("senderUid")
+                val timestamp = item.getLong("timestamp")
+
+                val chatMessage = ChatMessage(message = message, sender = sender, timestamp = timestamp)
+                messages.add(chatMessage)
+            }
+
+            runOnUiThread {
+                adapter.notifyDataSetChanged() // Notify the adapter that the whole dataset has changed
+                chatRecyclerView.scrollToPosition(messages.size - 1) // Scroll to the end
+            }
+        }
+    }
     private fun joinHazardRoom() {
         firebaseAuth.currentUser?.getIdToken(true)?.addOnSuccessListener { result ->
             val token = result.token
             val joinData = JSONObject()
             joinData.put("hazardId", hazardId)
             joinData.put("firebaseToken", token)
-            socket.emit("joinHazardRoom", joinData)
+            socket?.emit("joinHazardRoom", joinData)
         }?.addOnFailureListener {
             Log.e("SOCKET", "❌ Failed to get token: ${it.message}")
         }
@@ -121,7 +147,7 @@ class HazardChatActivity : AppCompatActivity() {
             data.put("hazardId", hazardId)
             data.put("firebaseToken", token)
             data.put("message", messageText)
-            socket.emit("sendMessage", data)
+            socket?.emit("sendMessage", data)
             Log.d("SOCKET", "📤 Sent message: $messageText")
             messageInput.text.clear()
         }
@@ -146,7 +172,7 @@ class HazardChatActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        socket.disconnect()
-        socket.off("newMessage", onNewMessage)
+        socket?.disconnect()
+        socket?.close()
     }
 }
