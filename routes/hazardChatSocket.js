@@ -17,22 +17,28 @@ socket.on('joinHazardRoom', async (data) => {
     console.log(`✅ User ${userId} joined room ${roomName}`);
     socket.emit('joinedRoom', { room: roomName });
 
-   
-    const result = await pool.query(`
-      SELECT sender_uid, message, timestamp 
-      FROM hazard_chat_messages 
-      WHERE hazard_id = $1 
-      ORDER BY timestamp ASC;
-    `, [hazardId]);
+  
+  const result = await pool.query(`
+    SELECT 
+      hcm.message, 
+      hcm.timestamp, 
+      u.name AS sender_name,
+      u.firebase_uid AS sender_uid 
+    FROM hazard_chat_messages hcm
+    INNER JOIN users u ON hcm.sender_uid = u.firebase_uid
+    WHERE hcm.hazard_id = $1 
+    ORDER BY hcm.timestamp ASC;
+  `, [hazardId]);
 
     const chatHistory = result.rows.map(row => ({
-      senderUid: row.sender_uid,
+      senderUid: row.sender_uid, 
+      senderName: row.sender_name, 
       message: row.message,
-      timestamp: row.timestamp.getTime() 
+      timestamp: row.timestamp.getTime()
     }));
 
-    
     socket.emit('chatHistory', chatHistory);
+
     console.log(`📦 Sent ${chatHistory.length} historical messages to user ${userId}`);
 
 
@@ -42,7 +48,7 @@ socket.on('joinHazardRoom', async (data) => {
   }
 });
 
-    socket.on('sendMessage', async (data) => {
+  socket.on('sendMessage', async (data) => {
   try {
     const { hazardId, firebaseToken, message } = data;
     console.log('🔁 Received sendMessage:', { hazardId, message });
@@ -53,6 +59,9 @@ socket.on('joinHazardRoom', async (data) => {
     console.log(`✅ Token valid. UID: ${userId}`);
     const hazardIdInt = parseInt(hazardId, 10);
     // Insert into DB
+    const userResult = await pool.query(`SELECT name FROM users WHERE firebase_uid = $1`, [userId]);
+    const senderName = userResult.rows[0].name;
+
     const result = await pool.query(`
       INSERT INTO hazard_chat_messages (hazard_id, sender_uid, message)
       VALUES ($1, $2, $3) RETURNING *;
@@ -65,6 +74,7 @@ socket.on('joinHazardRoom', async (data) => {
     io.to(roomName).emit('newMessage', {
       hazardId,
       senderUid: userId,
+      senderName,
       message,
       timestamp: savedMsg.timestamp.getTime()
     });
