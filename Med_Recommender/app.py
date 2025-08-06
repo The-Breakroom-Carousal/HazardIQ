@@ -2,7 +2,7 @@ import gradio as gr
 import joblib
 import numpy as np
 
-model = joblib.load("Med_Recommender_Cat_final.pkl")
+model = joblib.load("Med_Recommender.pkl")
 
 classes = [
     '(vertigo) Paroymsal  Positional Vertigo', 'AIDS', 'Acne',
