@@ -83,7 +83,7 @@ const createSosEventsTable  = async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS sos_events (
-        id   PRIMARY KEY,
+        id  SERIAL  PRIMARY KEY,
         firebase_uid TEXT NOT NULL,
         type TEXT NOT NULL,
         latitude DOUBLE PRECISION NOT NULL,
