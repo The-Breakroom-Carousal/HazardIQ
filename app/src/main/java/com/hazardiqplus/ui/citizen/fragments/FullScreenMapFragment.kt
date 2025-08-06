@@ -53,6 +53,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.ui.MainActivity
+import com.hazardiqplus.ui.citizen.fragments.home.HazardChatActivity
 import com.mapbox.geojson.Polygon
 import com.mapbox.maps.RenderedQueryGeometry
 import com.mapbox.maps.RenderedQueryOptions
@@ -408,7 +409,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                     val isInside = TurfJoins.inside(point, geometry)
                     if (isInside) {
                         withContext(Dispatchers.Main) {
-                            val intent = Intent(requireContext(), MainActivity::class.java)
+                            val intent = Intent(requireContext(), HazardChatActivity::class.java)
                             intent.putExtra("hazard_id", feature.queriedFeature.feature.getNumberProperty("hazard_id"))
                             intent.putExtra("hazard_type", feature.queriedFeature.feature.getStringProperty("hazard"))
                             startActivity(intent)

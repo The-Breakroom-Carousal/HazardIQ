@@ -24,9 +24,12 @@
         android:theme="@style/Theme.HazardIQ"
         tools:targetApi="31">
         <activity
+            android:name=".ui.citizen.fragments.home.HazardChatActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.SplashScreenActivity"
-            android:theme="@style/Theme.HazardIQ.AnimatedSplash"
-            android:exported="true" >
+            android:exported="true"
+            android:theme="@style/Theme.HazardIQ.AnimatedSplash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -51,9 +54,7 @@
             android:exported="false" />
         <activity
             android:name=".ui.LoginSignupActivity"
-            android:exported="false">
-
-        </activity>
+            android:exported="false"></activity>
         <activity
             android:name=".ui.MainActivity"
             android:exported="false" />
@@ -76,6 +77,9 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <receiver android:name=".clients.HazardGeofenceReceiver" android:exported="true"/>
+        <receiver
+            android:name=".clients.HazardGeofenceReceiver"
+            android:exported="true" />
     </application>
+
 </manifest>

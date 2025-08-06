@@ -261,6 +261,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                             val feature = Feature.fromGeometry(Point.fromLngLat(hazard.longitude, hazard.latitude))
                             feature.addNumberProperty("radius", hazard.rad)
                             feature.addStringProperty("label", hazard.hazard)
+                            feature.addNumberProperty("hazard_id", hazard.id)
                             hazardFeatures.add(feature)
                             setupHazardGeofence(hazard.latitude, hazard.longitude, hazard.rad, index)
                         }
@@ -1004,5 +1005,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     override fun onDestroyView() {
         super.onDestroyView()
         mapView.location.removeOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
+
     }
 }
