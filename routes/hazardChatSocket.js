@@ -5,8 +5,9 @@ module.exports = function(io) {
   io.on('connection', (socket) => {
     console.log('🟢 User connected:', socket.id);
 
-    socket.on('joinHazardRoom', ({ hazardId, firebaseToken }) => {
+    socket.on('joinHazardRoom', (data) =>{
       try {
+        const { hazardId, firebaseToken } = data; 
         admin.auth().verifyIdToken(firebaseToken)
           .then((decodedToken) => {
             const userId = decodedToken.uid;
@@ -24,20 +25,21 @@ module.exports = function(io) {
       }
     });
 
-    socket.on('sendMessage', async ({ hazardId, firebaseToken, message }) => {
+    socket.on('sendMessage', async (data) => {
   try {
+    const { hazardId, firebaseToken, message } = data;
     console.log('🔁 Received sendMessage:', { hazardId, message });
 
     const decoded = await admin.auth().verifyIdToken(firebaseToken);
     const userId = decoded.uid;
     const roomName = `hazard-${hazardId}`;
     console.log(`✅ Token valid. UID: ${userId}`);
-
+    const hazardIdInt = parseInt(hazardId, 10);
     // Insert into DB
     const result = await pool.query(`
       INSERT INTO hazard_chat_messages (hazard_id, sender_uid, message)
       VALUES ($1, $2, $3) RETURNING *;
-    `, [hazardId, userId, message]);
+    `, [hazardIdInt, userId, message]);
 
     const savedMsg = result.rows[0];
     console.log('✅ Message saved to DB:', savedMsg);
@@ -47,7 +49,7 @@ module.exports = function(io) {
       hazardId,
       senderUid: userId,
       message,
-      timestamp: savedMsg.timestamp
+      timestamp: savedMsg.timestamp.getTime()
     });
 
   } catch (err) {
