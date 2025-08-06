@@ -5,25 +5,42 @@ module.exports = function(io) {
   io.on('connection', (socket) => {
     console.log('🟢 User connected:', socket.id);
 
-    socket.on('joinHazardRoom', (data) =>{
-      try {
-        const { hazardId, firebaseToken } = data; 
-        admin.auth().verifyIdToken(firebaseToken)
-          .then((decodedToken) => {
-            const userId = decodedToken.uid;
-            const roomName = `hazard-${hazardId}`;
-            socket.join(roomName);
-            console.log(`✅ User ${userId} joined room ${roomName}`);
-            socket.emit('joinedRoom', { room: roomName });
-          })
-          .catch((err) => {
-            console.warn('❌ Invalid token:', err.message);
-            socket.emit('authError', { message: 'Invalid Firebase token' });
-          });
-      } catch (error) {
-        console.error('🔥 Error joining room:', error);
-      }
-    });
+   
+socket.on('joinHazardRoom', async (data) => { 
+  try {
+    const { hazardId, firebaseToken } = data; 
+    
+    const decodedToken = await admin.auth().verifyIdToken(firebaseToken);
+    const userId = decodedToken.uid;
+    const roomName = `hazard-${hazardId}`;
+    socket.join(roomName);
+    console.log(`✅ User ${userId} joined room ${roomName}`);
+    socket.emit('joinedRoom', { room: roomName });
+
+   
+    const result = await pool.query(`
+      SELECT sender_uid, message, timestamp 
+      FROM hazard_chat_messages 
+      WHERE hazard_id = $1 
+      ORDER BY timestamp ASC;
+    `, [hazardId]);
+
+    const chatHistory = result.rows.map(row => ({
+      senderUid: row.sender_uid,
+      message: row.message,
+      timestamp: row.timestamp.getTime() 
+    }));
+
+    
+    socket.emit('chatHistory', chatHistory);
+    console.log(`📦 Sent ${chatHistory.length} historical messages to user ${userId}`);
+
+
+  } catch (error) {
+    console.error('🔥 Error joining room or fetching history:', error);
+    socket.emit('authError', { message: 'Invalid Firebase token or server error' });
+  }
+});
 
     socket.on('sendMessage', async (data) => {
   try {
