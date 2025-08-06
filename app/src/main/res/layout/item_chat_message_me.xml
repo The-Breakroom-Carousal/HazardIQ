@@ -4,24 +4,24 @@
     android:layout_height="wrap_content"
     android:padding="8dp"
     android:orientation="vertical"
-    android:gravity="start">
+    android:gravity="end">
 
     <TextView
         android:id="@+id/chatSender"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sender"
+        android:text="You"
         android:textStyle="bold"
-        android:textColor="@android:color/holo_blue_dark" />
+        android:textColor="@android:color/holo_green_dark" />
 
     <TextView
         android:id="@+id/chatMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Message"
-        android:background="@drawable/bg_chat_bubble_other"
+        android:background="@drawable/bg_chat_bubble_me"
         android:padding="10dp"
-        android:textColor="@android:color/black"
+        android:textColor="@android:color/white"
         android:layout_marginTop="4dp" />
 
     <TextView

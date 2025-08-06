@@ -1,3 +1,4 @@
+
 package com.hazardiqplus.ui.citizen.fragments.home
 
 import android.os.Bundle
@@ -32,20 +33,25 @@ class HazardChatActivity : AppCompatActivity() {
     private var socket: Socket? = null
     private lateinit var hazardId: String
     private lateinit var firebaseAuth: FirebaseAuth
+    private var currentUserId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_hazard_chat)
 
+        // Initialize Firebase auth
+        firebaseAuth = Firebase.auth
+        currentUserId = firebaseAuth.currentUser?.uid
+
+        // Initialize UI components
         hazardTitle = findViewById(R.id.hazardTitle)
         chatRecyclerView = findViewById(R.id.chatRecyclerView)
         messageInput = findViewById(R.id.messageInput)
         sendButton = findViewById(R.id.sendButton)
 
-        firebaseAuth = Firebase.auth
-
+        // Get intent extras
         val hazardType = intent.getStringExtra("hazard_type") ?: "Hazard"
-        val hazardIdLong = intent.getStringExtra("hazard_id")?.toLong() ?:-1
+        val hazardIdLong = intent.getStringExtra("hazard_id")?.toLong() ?: -1
 
         if (hazardIdLong == -1L) {
             Log.e("HazardChat", "Missing or invalid hazard_id in intent")
@@ -53,15 +59,22 @@ class HazardChatActivity : AppCompatActivity() {
             return
         }
 
-        hazardId = hazardIdLong.toString() // for use in socket room
+        hazardId = hazardIdLong.toString()
         hazardTitle.text = "$hazardType | ID: $hazardId"
 
-
+        // Setup RecyclerView
         adapter = ChatMessageAdapter(messages)
         chatRecyclerView.layoutManager = LinearLayoutManager(this)
         chatRecyclerView.adapter = adapter
 
-        connectSocket()
+        // **Connect to socket only after Firebase user is confirmed to be logged in**
+        if (currentUserId != null) {
+            connectSocket()
+        } else {
+            // Handle case where user is not logged in, maybe redirect to login or show an error
+            Log.e("HazardChat", "User not logged in.")
+            // You could show a toast or a different UI here
+        }
 
         sendButton.setOnClickListener {
             val text = messageInput.text.toString().trim()
@@ -74,30 +87,24 @@ class HazardChatActivity : AppCompatActivity() {
     private fun connectSocket() {
         try {
             socket = IO.socket("https://hazardiq-bwxg.onrender.com")
-            socket?.connect()
 
             socket?.on(Socket.EVENT_CONNECT) {
                 Log.d("SOCKET", "✅ Connected to socket")
                 joinHazardRoom()
             }
 
-            socket?.on("joinedRoom") {
-                Log.d("SOCKET", "✅ Joined hazard room")
-            }
-
+            // Add listeners for other events here
+            socket?.on("joinedRoom") { Log.d("SOCKET", "✅ Joined hazard room") }
             socket?.on("chatHistory", onChatHistory)
-
             socket?.on("authError") { args ->
                 runOnUiThread {
                     Log.e("SOCKET", "❌ Auth failed: ${args[0]}")
                 }
             }
-
             socket?.on("newMessage", onNewMessage)
+            socket?.on(Socket.EVENT_DISCONNECT) { Log.d("SOCKET", "🔌 Disconnected from socket") }
 
-            socket?.on(Socket.EVENT_DISCONNECT) {
-                Log.d("SOCKET", "🔌 Disconnected from socket")
-            }
+            socket?.connect()
 
         } catch (e: Exception) {
             Log.e("SOCKET", "❌ Error connecting to socket", e)
@@ -106,28 +113,27 @@ class HazardChatActivity : AppCompatActivity() {
 
     private val onChatHistory = Emitter.Listener { args ->
         if (args.isNotEmpty()) {
-            val data = args[0] as org.json.JSONArray // The server sends a JSON array
-
-            // Clear the current messages list before adding history
-            // This prevents duplication if the activity is not fully destroyed
-            messages.clear()
-
-            for (i in 0 until data.length()) {
-                val item = data.getJSONObject(i)
-                val message = item.getString("message")
-                val sender = item.getString("senderUid")
-                val timestamp = item.getLong("timestamp")
-
-                val chatMessage = ChatMessage(message = message, sender = sender, timestamp = timestamp)
-                messages.add(chatMessage)
-            }
+            val data = args[0] as org.json.JSONArray
 
             runOnUiThread {
-                adapter.notifyDataSetChanged() // Notify the adapter that the whole dataset has changed
-                chatRecyclerView.scrollToPosition(messages.size - 1) // Scroll to the end
+                messages.clear()
+                for (i in 0 until data.length()) {
+                    val item = data.getJSONObject(i)
+                    val message = item.getString("message")
+                    val senderUid = item.getString("senderUid")
+                    val senderName = item.getString("senderName")
+                    val timestamp = item.getLong("timestamp")
+
+                    val chatMessage = ChatMessage(message = message, sender = senderUid, senderName = senderName, timestamp = timestamp)
+                    chatMessage.isMine = senderUid == currentUserId
+                    messages.add(chatMessage)
+                }
+                adapter.notifyDataSetChanged()
+                chatRecyclerView.scrollToPosition(messages.size - 1)
             }
         }
     }
+
     private fun joinHazardRoom() {
         firebaseAuth.currentUser?.getIdToken(true)?.addOnSuccessListener { result ->
             val token = result.token
@@ -150,6 +156,8 @@ class HazardChatActivity : AppCompatActivity() {
             socket?.emit("sendMessage", data)
             Log.d("SOCKET", "📤 Sent message: $messageText")
             messageInput.text.clear()
+        }?.addOnFailureListener {
+            Log.e("SOCKET", "❌ Failed to get token for sending message: ${it.message}")
         }
     }
 
@@ -157,11 +165,12 @@ class HazardChatActivity : AppCompatActivity() {
         if (args.isNotEmpty()) {
             val data = args[0] as JSONObject
             val message = data.getString("message")
-            val sender = data.getString("senderUid")
+            val senderUid  = data.getString("senderUid")
+            val senderName = data.getString("senderName")
             val timestamp = data.getLong("timestamp")
 
-            val chatMessage = ChatMessage(message = message, sender = sender, timestamp = timestamp)
-
+            val chatMessage = ChatMessage(message = message, sender = senderUid, senderName = senderName, timestamp = timestamp)
+            chatMessage.isMine = senderUid == currentUserId
             runOnUiThread {
                 messages.add(chatMessage)
                 adapter.notifyItemInserted(messages.size - 1)
