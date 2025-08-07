@@ -78,6 +78,23 @@ const hazardChatTable = async () => {
   }
 };
 
+const sosChatTable = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sos_chat_messages (
+        id SERIAL PRIMARY KEY,
+        sos_id INTEGER REFERENCES sos_events(id) ON DELETE CASCADE,
+        sender_uid TEXT NOT NULL,
+        message TEXT NOT NULL,
+        timestamp TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    console.log("✅ Created 'sos_chat_messages' table");
+  } catch (error) {
+    console.error("❌ Error creating 'sos_chat_messages' table:", error);
+  }
+};
+
 
 const createSosEventsTable  = async () => {
   try {
@@ -90,6 +107,7 @@ const createSosEventsTable  = async () => {
         longitude DOUBLE PRECISION NOT NULL,
         city TEXT NOT NULL,
         progress TEXT DEFAULT 'pending' CHECK (progress IN ('pending', 'acknowledged', 'resolved')),
+        responder_uid TEXT,
         timestamp TIMESTAMPTZ DEFAULT NOW()
       );
     `);
@@ -106,6 +124,7 @@ const init = async () => {
   await hazard_data();
   await hazardChatTable();
   await createSosEventsTable();
+  await sosChatTable();
 };
 
 init();

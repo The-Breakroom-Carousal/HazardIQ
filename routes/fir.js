@@ -67,38 +67,52 @@ router.get('/me', async (req, res) => {
 });
 
 
-//update  an userinfo
-router.put('/user',async(req,res)=>
-  {
-
+//update  any userinfo
+router.put('/user', async (req, res) => {
   const idToken = req.headers.idtoken;
 
   if (!idToken) return res.status(401).json({ error: 'Missing ID token' });
 
-  try{
+  try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     const firebase_uid = decodedToken.uid;
-    const { name, role, location_lat, location_lng, fcm_token } = req.body;
+
+    const {
+      name,
+      email,
+      role,
+      location_lat,
+      location_lng,
+      fcm_token
+    } = req.body;
 
     const result = await pool.query(
-      `UPDATE users
-      SET name = COALESCE($1, name),
-          role = COALESCE($2, role),
-          location_lat = COALESCE($3, location_lat),
-          location_lng = COALESCE($4, location_lng),
-          fcm_token = COALESCE($5, fcm_token)
-      WHERE firebase_uid = $6 RETURNING *`,
-      [ name, role, location_lat, location_lng, fcm_token,idToken]
+      `
+      UPDATE users
+      SET 
+        name = COALESCE($1, name),
+        email = COALESCE($2, email),
+        role = COALESCE($3, role),
+        location_lat = COALESCE($4, location_lat),
+        location_lng = COALESCE($5, location_lng),
+        fcm_token = COALESCE($6, fcm_token)
+      WHERE firebase_uid = $7
+      RETURNING *;
+      `,
+      [name, email, role, location_lat, location_lng, fcm_token, firebase_uid]
     );
-    if (result.length==0 ) return res.status(404).json({error :'FIR NOT FOUND'});
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     res.status(200).json(result.rows[0]);
-
-
-  }catch(err){
-    console.error('Error deleting FIR:', err);
+  } catch (err) {
+    console.error('❌ Error updating user:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
-})
+});
+
   
 router.delete('/user',async(req,res)=>
 {
