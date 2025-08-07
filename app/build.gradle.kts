@@ -37,6 +37,10 @@ android {
     buildFeatures {
         mlModelBinding = true
     }
+
+    packagingOptions {
+
+    }
 }
 
 dependencies {

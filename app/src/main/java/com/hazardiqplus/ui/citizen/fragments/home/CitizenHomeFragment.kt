@@ -3,11 +3,11 @@ package com.hazardiqplus.ui.citizen.fragments.home
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
@@ -94,6 +94,7 @@ import kotlin.math.cos as kCos
 import kotlin.math.sqrt as kSqrt
 import kotlin.math.atan2 as kAtan2
 import kotlin.math.pow as kPow
+import androidx.core.graphics.get
 
 class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
@@ -850,16 +851,24 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     floatValues[i * 3 + 1] = ((pixel shr 8 and 0xFF) / 255.0f)  // G
                     floatValues[i * 3 + 2] = ((pixel and 0xFF) / 255.0f)        // B
                 }
-                val chw = FloatArray(3 * 224 * 224)
-                for (y in 0 until 224) {
-                    for (x in 0 until 224) {
-                        for (c in 0 until 3) {
-                            chw[c * 224 * 224 + y * 224 + x] =
-                                floatValues[y * 224 * 3 + x * 3 + c]
+                val mean = floatArrayOf(0.485f, 0.456f, 0.406f)
+                val std = floatArrayOf(0.229f, 0.224f, 0.225f)
+
+                val chw = FloatArray(1 * 3 * 224 * 224)
+                var idx = 0
+                for (c in 0 until 3) {
+                    for (y in 0 until 224) {
+                        for (x in 0 until 224) {
+                            val pixel = resized[x, y]
+                            val value = when (c) {
+                                0 -> (Color.red(pixel) / 255.0f - mean[0]) / std[0]
+                                1 -> (Color.green(pixel) / 255.0f - mean[1]) / std[1]
+                                else -> (Color.blue(pixel) / 255.0f - mean[2]) / std[2]
+                            }
+                            chw[idx++] = value
                         }
                     }
                 }
-
                 val inputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 3, 224, 224), DataType.FLOAT32)
                 inputBuffer.loadArray(chw)
                 val outputs = model.process(inputBuffer)

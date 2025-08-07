@@ -1,20 +1,27 @@
 package com.hazardiqplus.services
 
+import com.hazardiqplus.data.DeleteSosResponse
 import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
 import com.hazardiqplus.data.SaveHazardRequest
 import com.hazardiqplus.data.SaveHazardResponse
+import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.data.SosRequest
 import com.hazardiqplus.data.SosResponse
+import com.hazardiqplus.data.UpdateProgressRequest
+import com.hazardiqplus.data.UpdateProgressResponse
 import com.hazardiqplus.data.User
 import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
 import retrofit2.Call
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
@@ -39,4 +46,16 @@ interface ApiService {
         @Query("lon") lon: Double?,
         @Query("radius") radius: Int
     ): Call<FindHazardResponse>
+
+    @GET("api/sos-events/{city}")
+    fun getSosEvents(@Path("city") city: String): Call<List<SosEvent>>
+
+    @DELETE("api/sos-events/{id}")
+    fun deleteSosEvent(@Path("id") id: Int): Call<DeleteSosResponse>
+
+    @PUT("api/sos-events/{id}/progress")
+    fun updateSosProgress(
+        @Path("id") id: Int,
+        @Body request: UpdateProgressRequest
+    ): Call<UpdateProgressResponse>
 }

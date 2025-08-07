@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.hazardiqplus.clients.RetrofitClient
@@ -99,6 +100,23 @@ class SosFragment : Fragment(R.layout.fragment_sos) {
     }
 
     private fun triggerSosCall() {
+        val emergencyTypes = arrayOf("Medical Emergency", "Fire", "Police", "Disaster Management")
+        var selectedIndex = 0
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Select Emergency Type")
+            .setSingleChoiceItems(emergencyTypes, selectedIndex) { _, which ->
+                selectedIndex = which
+            }
+            .setPositiveButton("Send SOS") { dialog, _ ->
+                dialog.dismiss()
+                sendSos(emergencyTypes[selectedIndex])
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun sendSos(type: String) {
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -122,7 +140,7 @@ class SosFragment : Fragment(R.layout.fragment_sos) {
                     ?.addOnSuccessListener { result ->
                         val request = SosRequest(
                             idToken = result.token ?: "",
-                            type = "Medical Emergency",
+                            type = type,
                             city = city,
                             lat = location.latitude,
                             lng = location.longitude
@@ -136,7 +154,7 @@ class SosFragment : Fragment(R.layout.fragment_sos) {
                                     if (response.isSuccessful && response.body()?.success == true) {
                                         Toast.makeText(
                                             requireContext(),
-                                            "🚨 SOS Sent to ${response.body()?.sent} responders!",
+                                            "🚨 SOS Sent: $type to ${response.body()?.sent} responders!",
                                             Toast.LENGTH_LONG
                                         ).show()
                                     } else {

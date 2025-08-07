@@ -3,6 +3,7 @@ package com.hazardiqplus.ui.responder
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +38,7 @@ class ReactSosActitvity : AppCompatActivity() {
     private lateinit var mapView: MapView
     private lateinit var tvSOSType: TextView
     private lateinit var tvSOSSender: TextView
+    private var routeDrawn = false
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +86,7 @@ class ReactSosActitvity : AppCompatActivity() {
 
         style.addImage(
             "sos-icon",
-            ContextCompat.getDrawable(this, R.drawable.sos_pin)!!.toBitmap(width = 48, height = 48)
+            ContextCompat.getDrawable(this, R.drawable.sos_pin)!!.toBitmap(width = 96, height = 96)
         )
 
         val symbolLayer = symbolLayer("sos-layer", "sos-source") {
@@ -94,8 +96,12 @@ class ReactSosActitvity : AppCompatActivity() {
         style.addLayer(symbolLayer)
 
         mapView.location.addOnIndicatorPositionChangedListener { userPoint ->
-            drawRoute(userPoint, sosPoint)
+            if (!routeDrawn && userPoint.longitude() != 0.0 && userPoint.latitude() != 0.0) {
+                routeDrawn = true
+                drawRoute(userPoint, sosPoint)
+            }
         }
+
     }
 
     private fun drawRoute(origin: Point, destination: Point) {
