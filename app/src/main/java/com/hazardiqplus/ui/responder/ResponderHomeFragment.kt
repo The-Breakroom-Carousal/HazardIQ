@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -34,6 +35,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
     private lateinit var adapter: SosRequestAdapter
     private lateinit var tabLayout: TabLayout
     private lateinit var recyclerRequests: RecyclerView
+    private lateinit var tvLocation: TextView
     private val allRequests = mutableListOf<SosEvent>()
     private val pendingRequests = mutableListOf<SosEvent>()
     private val declinedRequests = mutableListOf<SosEvent>()
@@ -48,6 +50,8 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
         val view = inflater.inflate(R.layout.fragment_responder_home, container, false)
         tabLayout = view.findViewById(R.id.tabLayout)
         recyclerRequests = view.findViewById(R.id.recyclerRequests)
+        tvLocation = view.findViewById(R.id.tvLocation)
+        tvLocation.text = currentLocation
         return view
     }
 
@@ -167,6 +171,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                     val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
                     val city = address?.locality ?: "Unknown"
                     currentLocation = city
+                    tvLocation.text = city
                     fetchSosRequests(city)
                 } else {
                     Toast.makeText(requireContext(), "Failed to get location", Toast.LENGTH_SHORT).show()
