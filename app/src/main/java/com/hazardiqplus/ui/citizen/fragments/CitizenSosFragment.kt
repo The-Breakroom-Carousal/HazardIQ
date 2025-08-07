@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -18,12 +17,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.hazardiqplus.adapters.MySosAdapter
 import com.hazardiqplus.clients.RetrofitClient
+import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.data.SosRequest
 import com.hazardiqplus.data.SosResponse
 import retrofit2.Call
@@ -31,25 +34,39 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.util.Locale
 
-class SosFragment : Fragment(R.layout.fragment_sos) {
+class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var btnSos: Button
+    private lateinit var mySosRecycler: RecyclerView
+    private lateinit var mySosAdapter: MySosAdapter
+    private val mySosList = mutableListOf<SosEvent>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_sos, container, false)
+        val view = inflater.inflate(R.layout.fragment_citizen_sos, container, false)
         btnSos = view.findViewById(R.id.btnSos)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        mySosRecycler = view.findViewById(R.id.recyclerMySos)
         setupEmergencyContacts(view)
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        mySosAdapter = MySosAdapter(mySosList, object : MySosAdapter.OnActionListener {
+            override fun onDelete(event: SosEvent) {
+                deleteMySos(event)
+            }
+        })
+        mySosRecycler.layoutManager = LinearLayoutManager(requireContext())
+        mySosRecycler.adapter = mySosAdapter
+
+        getUserLocation()
 
         btnSos.setOnClickListener {
             triggerSosCall()
@@ -97,6 +114,49 @@ class SosFragment : Fragment(R.layout.fragment_sos) {
             }
             startActivity(intent)
         }
+    }
+
+    private fun fetchMySosRequests(city: String) {
+        Firebase.auth.currentUser?.uid?.let { uid ->
+            RetrofitClient.instance.getSosEvents(city)
+                .enqueue(object : Callback<List<SosEvent>> {
+                    override fun onResponse(call: Call<List<SosEvent>>, response: Response<List<SosEvent>>) {
+                        if (response.isSuccessful && response.body() != null) {
+                            mySosList.clear()
+                            mySosList.addAll(response.body()!!.filter { it.firebase_uid == uid })
+                            mySosAdapter.notifyDataSetChanged()
+                        } else {
+                            Toast.makeText(requireContext(), "Couldn't fetch your requests", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<List<SosEvent>>, t: Throwable) {
+                        Toast.makeText(requireContext(), "Network Error", Toast.LENGTH_SHORT).show()
+                    }
+                })
+        }
+    }
+
+    private fun deleteMySos(event: SosEvent) {
+        RetrofitClient.instance.deleteSosEvent(event.id)
+            .enqueue(object : Callback<com.hazardiqplus.data.DeleteSosResponse> {
+                override fun onResponse(
+                    call: Call<com.hazardiqplus.data.DeleteSosResponse>,
+                    response: Response<com.hazardiqplus.data.DeleteSosResponse>
+                ) {
+                    if (response.isSuccessful && response.body()?.message != null) {
+                        mySosList.remove(event)
+                        mySosAdapter.notifyDataSetChanged()
+                        Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "Delete failed", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<com.hazardiqplus.data.DeleteSosResponse>, t: Throwable) {
+                    Toast.makeText(requireContext(), "Network error", Toast.LENGTH_SHORT).show()
+                }
+            })
     }
 
     private fun triggerSosCall() {
@@ -173,5 +233,32 @@ class SosFragment : Fragment(R.layout.fragment_sos) {
                 Toast.makeText(requireContext(), "Location unavailable", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun getUserLocation() {
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        LocationServices.getFusedLocationProviderClient(requireContext())
+            .lastLocation
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                    val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
+                    val city = address?.locality ?: "Unknown"
+                    fetchMySosRequests(city)
+                } else {
+                    Toast.makeText(requireContext(), "Failed to get location", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Location", "Failed to get location", e)
+                Toast.makeText(requireContext(), "Failed to get location", Toast.LENGTH_SHORT).show()
+            }
     }
 }

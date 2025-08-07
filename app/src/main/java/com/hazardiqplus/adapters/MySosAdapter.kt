@@ -1,0 +1,50 @@
+package com.hazardiqplus.adapters
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import com.hazardiqplus.R
+import com.hazardiqplus.data.SosEvent
+
+class MySosAdapter(
+    private val sosList: MutableList<SosEvent>,
+    private val listener: OnActionListener
+) : RecyclerView.Adapter<MySosAdapter.SosViewHolder>() {
+
+    interface OnActionListener {
+        fun onDelete(event: SosEvent)
+    }
+
+    inner class SosViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvType: TextView = view.findViewById(R.id.tvSosType)
+        val tvCity: TextView = view.findViewById(R.id.tvSosCity)
+        val btnDelete: Button = view.findViewById(R.id.btnDelete)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SosViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_my_sos, parent, false)
+        return SosViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: SosViewHolder, position: Int) {
+        val event = sosList[position]
+        holder.tvType.text = event.type
+        holder.tvCity.text = event.city
+
+        holder.btnDelete.setOnClickListener {
+            listener.onDelete(event)
+        }
+    }
+
+    override fun getItemCount() = sosList.size
+
+    fun updateData(newList: List<SosEvent>) {
+        sosList.clear()
+        sosList.addAll(newList)
+        notifyDataSetChanged()
+    }
+}
