@@ -12,11 +12,23 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.hazardiqplus.R
+import com.hazardiqplus.clients.RetrofitClient
+import com.hazardiqplus.data.FcmTokenUpdateRequest
+import com.hazardiqplus.data.UserResponse
 import com.hazardiqplus.ui.responder.ReactSosActitvity
 import com.hazardiqplus.utils.SosActionReceiver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @SuppressLint("MissingFirebaseInstanceTokenRefresh")
 class FcmService : FirebaseMessagingService(){
@@ -107,4 +119,51 @@ class FcmService : FirebaseMessagingService(){
         }
     }
 
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        Log.d("FCM_TOKEN", "New token generated: $token")
+
+        // If a user is logged in, send the token to your server.
+        Firebase.auth.currentUser?.let {
+            sendTokenToServer(token)
+        }
+    }
+
+    private fun sendTokenToServer(token: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+
+                val idToken = Firebase.auth.currentUser?.getIdToken(true)?.await()?.token
+                if (idToken == null) {
+                    Log.e("FCM_TOKEN", "User is not authenticated, cannot send token.")
+                    return@launch
+                }
+
+
+                val request = FcmTokenUpdateRequest(fcmToken = token)
+
+                // 3. Make the API call using your Retrofit instance
+                val call = RetrofitClient.instance.updateUser(idToken, request)
+
+                call.enqueue(object : Callback<UserResponse> {
+                    override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
+                        if (response.isSuccessful) {
+                            val userResponse = response.body()
+                            Log.d("UpdateUser", "Success: ${userResponse}")
+                        } else {
+                            Log.e("UpdateUser", "Failed: ${response.code()} ${response.errorBody()?.string()}")
+                        }
+                    }
+
+                    override fun onFailure(call: Call<UserResponse>, t: Throwable) {
+                        Log.e("UpdateUser", "Error: ${t.message}", t)
+                    }
+                })
+
+            } catch (e: Exception) {
+                Log.e("FCM_TOKEN", "Error sending FCM token to server", e)
+            }
+        }
+    }
 }
+
