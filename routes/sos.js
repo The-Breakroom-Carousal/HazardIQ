@@ -16,11 +16,12 @@ router.post('/send-sos', async (req, res) => {
     const decoded = await admin.auth().verifyIdToken(idToken);
     const uid = decoded.uid;
 
-    await pool.query(
-      `INSERT INTO sos_events (firebase_uid, type, latitude, longitude,city) VALUES ($1, $2, $3, $4,$5)`,
-      [uid, type, lat, lng,city]
-    );
-
+    const inserted = await pool.query(
+  `INSERT INTO sos_events (firebase_uid, type, latitude, longitude, city) 
+   VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+  [uid, type, lat, lng, city]
+);
+    const sosId = inserted.rows[0].id;
     const userRes = await pool.query(
       'SELECT name FROM users WHERE firebase_uid = $1',
       [uid]
@@ -72,7 +73,7 @@ router.post('/send-sos', async (req, res) => {
       ...payload
     });
 
-    res.json({ success: true, sent: fcmResponse.successCount, failed: fcmResponse.failureCount });
+    res.json({ success: true,sosId, sent: fcmResponse.successCount, failed: fcmResponse.failureCount });
 
   } catch (err) {
     console.error("❌ Error in /send-sos:", err);
@@ -103,7 +104,7 @@ router.get('/sos-events/:city', async (req, res) => {
 router.put('/sos-events/:id/progress', async (req, res) => {
   const { id } = req.params;
   const { progress,idToken} = req.body;
-  
+
   const allowed = ['pending', 'acknowledged', 'resolved'];
   if (!allowed.includes(progress)) {
     return res.status(400).json({ error: "Invalid progress value" });
