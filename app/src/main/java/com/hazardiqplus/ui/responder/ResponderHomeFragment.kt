@@ -24,6 +24,7 @@ import com.hazardiqplus.adapters.SosRequestAdapter
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.data.UpdateProgressRequest
+import com.hazardiqplus.data.UpdateProgressResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -127,7 +128,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
 
                         val uid = FirebaseAuth.getInstance().currentUser?.uid
                         acceptedRequests.clear()
-                        acceptedRequests.addAll(responseData.filter { it.progress == "acknowledged" && it.responderId == uid })
+                        acceptedRequests.addAll(responseData.filter { it.progress == "acknowledged" && it.responder_uid == uid })
 
                         updateRecyclerForTab(tabLayout.selectedTabPosition)
                     } else {
@@ -140,24 +141,24 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                 }
             })
     }
+
     override fun onAccept(event: SosEvent) {
         FirebaseAuth.getInstance().currentUser?.getIdToken(true)
             ?.addOnSuccessListener { result ->
                 val token = result.token
                 if (token != null) {
+                    Log.d("SosEvents", "Token: $token")
                     val request = UpdateProgressRequest(progress = "acknowledged", token)
                     RetrofitClient.instance.updateSosProgress(event.id, request)
-                        .enqueue(object : Callback<com.hazardiqplus.data.UpdateProgressResponse> {
+                        .enqueue(object : Callback<UpdateProgressResponse> {
                             override fun onResponse(
-                                call: Call<com.hazardiqplus.data.UpdateProgressResponse>,
-                                response: Response<com.hazardiqplus.data.UpdateProgressResponse>
+                                call: Call<UpdateProgressResponse>,
+                                response: Response<UpdateProgressResponse>
                             ) {
                                 if (response.isSuccessful && response.body()?.message != null) {
                                     Toast.makeText(requireContext(), "Request Accepted", Toast.LENGTH_SHORT).show()
 
                                     pendingRequests.remove(event)
-                                    val updatedEvent = event.copy(progress = "acknowledged")
-                                    acceptedRequests.add(updatedEvent)
 
                                     updateRecyclerForTab(tabLayout.selectedTabPosition)
                                 } else {

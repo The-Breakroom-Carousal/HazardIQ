@@ -47,8 +47,7 @@ class MySosAdapter(
         holder.tvType.text = event.type
         holder.tvCity.text = event.city
         holder.tvStatus.text = "Status: ${event.progress.replaceFirstChar { it.uppercase()}}"
-        if (event.progress == "acknowledged" && event.responderId != null) {
-            Log.d("MySosAdapter", "Fetching user details for responderId: ${event.responderId}")
+        if (event.progress == "acknowledged" && event.responder_uid != null) {
             Firebase.auth.currentUser?.getIdToken(true)
                 ?.addOnSuccessListener { tokenResult ->
                     val idToken = tokenResult.token
