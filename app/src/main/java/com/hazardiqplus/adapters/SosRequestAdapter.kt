@@ -11,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.auth.FirebaseAuth
 import com.hazardiqplus.R
 import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.ui.responder.ReactSosActitvity
@@ -90,6 +91,11 @@ class SosRequestAdapter(
             } else {
                 listener.onDecline(event)
             }
+        }
+
+        if (event.progress == "acknowledged" && event.responder_uid != FirebaseAuth.getInstance().currentUser?.uid) {
+            holder.btnAccept.visibility = View.GONE
+            holder.btnDecline.visibility = View.GONE
         }
     }
 
