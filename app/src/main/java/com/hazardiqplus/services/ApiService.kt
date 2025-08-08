@@ -1,6 +1,7 @@
 package com.hazardiqplus.services
 
 import com.hazardiqplus.data.DeleteSosResponse
+import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
@@ -14,6 +15,7 @@ import com.hazardiqplus.data.UpdateProgressResponse
 import com.hazardiqplus.data.User
 import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
+import com.hazardiqplus.data.UserResponse
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -57,4 +59,11 @@ interface ApiService {
         @Path("id") id: Int,
         @Body request: UpdateProgressRequest
     ): Call<UpdateProgressResponse>
+
+    @PUT("api/user")
+    fun updateUser(
+        @Header("idtoken") idToken: String,
+        @Body request: FcmTokenUpdateRequest
+    ): Call<UserResponse>
+
 }
