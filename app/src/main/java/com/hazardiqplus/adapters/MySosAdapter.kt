@@ -1,14 +1,22 @@
 package com.hazardiqplus.adapters
 
 import android.annotation.SuppressLint
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.hazardiqplus.R
+import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosEvent
+import com.hazardiqplus.data.User
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MySosAdapter(
     private val sosList: MutableList<SosEvent>,
@@ -39,9 +47,25 @@ class MySosAdapter(
         holder.tvType.text = event.type
         holder.tvCity.text = event.city
         holder.tvStatus.text = "Status: ${event.progress.replaceFirstChar { it.uppercase()}}"
-        if (event.progress == "acknowledged") {
-            holder.tvResponderDetails.text = "Responder: Sayantan Sen"
-            holder.tvResponderDetails.visibility = View.VISIBLE
+        if (event.progress == "acknowledged" && event.responderId != null) {
+            Log.d("MySosAdapter", "Fetching user details for responderId: ${event.responderId}")
+            Firebase.auth.currentUser?.getIdToken(true)
+                ?.addOnSuccessListener { tokenResult ->
+                    val idToken = tokenResult.token
+                    RetrofitClient.instance.getUserDetails(idToken ?: "")
+                        .enqueue(object : Callback<User> {
+                            override fun onResponse(call: Call<User>, response: Response<User>) {
+                                if (response.isSuccessful && response.body() != null) {
+                                    holder.tvResponderDetails.text = "Responder: ${response.body()?.name}"
+                                    holder.tvResponderDetails.visibility = View.VISIBLE
+                                }
+                            }
+
+                            override fun onFailure(call: Call<User>, t: Throwable) {
+                                Log.d("MySosAdapter", "Failed to fetch user details")
+                            }
+                        })
+                }
         } else {
             holder.tvResponderDetails.visibility = View.GONE
         }

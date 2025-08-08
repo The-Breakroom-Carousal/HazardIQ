@@ -1,7 +1,13 @@
 package com.hazardiqplus.data
 
-import com.google.gson.annotations.SerializedName
-
 data class User(
-     val role: String
+     val id: Int,
+     val firebase_uid: String,
+     val name: String,
+     val email: String,
+     val role: String,
+     val location_lat: Double,
+     val location_lng: Double,
+     val fcm_token: String,
+     val created_at: String
 )

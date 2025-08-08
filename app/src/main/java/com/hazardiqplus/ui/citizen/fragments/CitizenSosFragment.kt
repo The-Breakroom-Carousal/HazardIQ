@@ -289,13 +289,17 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
             .lastLocation
             .addOnSuccessListener { location ->
                 if (location != null) {
-                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
-                    val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
-                    val city = address?.locality ?: "Unknown"
-                    val state = address?.adminArea ?: "Unknown"
-                    tvLocation.text = "Location: $city, $state"
-                    tvCurrentTime.text = "Current time: ${java.text.SimpleDateFormat("hh:mm a", Locale.getDefault()).format(java.util.Date())}"
-                    fetchMySosRequests(city)
+                    try {
+                        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                        val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
+                        val city = address?.locality ?: "Unknown"
+                        val state = address?.adminArea ?: "Unknown"
+                        tvLocation.text = "Location: $city, $state"
+                        tvCurrentTime.text = "Current time: ${java.text.SimpleDateFormat("hh:mm a", Locale.getDefault()).format(java.util.Date())}"
+                        fetchMySosRequests(city)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 } else {
                     Toast.makeText(requireContext(), "Failed to get location", Toast.LENGTH_SHORT).show()
                 }

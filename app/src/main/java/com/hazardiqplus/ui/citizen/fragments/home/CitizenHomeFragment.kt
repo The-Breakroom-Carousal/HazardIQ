@@ -474,7 +474,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     )
                     predictAirQuality(modelCity, normalizedState, lat, lon)
                 } catch (_: Exception) {
-                    showToast("Failed to get location data for forecast")
+                    Log.d("Weather", "Failed to load forecast")
                 }
             }
         }

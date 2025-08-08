@@ -27,7 +27,6 @@ import retrofit2.http.Query
 interface ApiService {
     @POST("api/register")
     fun registerUser (@Body registerRequest: UserRegisterRequest): Call<UserRegisterResponse>
-
     @GET("api/me")
     fun getUserDetails(@Header("idtoken") idToken: String): Call<User>
 
