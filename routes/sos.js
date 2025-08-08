@@ -102,17 +102,25 @@ router.get('/sos-events/:city', async (req, res) => {
 
 router.put('/sos-events/:id/progress', async (req, res) => {
   const { id } = req.params;
-  const { progress } = req.body;
-
+  const { progress,idToken} = req.body;
+  
   const allowed = ['pending', 'acknowledged', 'resolved'];
   if (!allowed.includes(progress)) {
     return res.status(400).json({ error: "Invalid progress value" });
   }
 
   try {
+    let responderUid = null;
+    if (progress === 'acknowledged') {
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      responderUid = decoded.uid;
+    }
     const result = await pool.query(
-      `UPDATE sos_events SET progress = $1 WHERE id = $2 RETURNING *`,
-      [progress, id]
+      `UPDATE sos_events 
+       SET progress = $1, responder_uid = COALESCE($2, responder_uid) 
+       WHERE id = $3 
+       RETURNING *`,
+      [progress, responderUid, id]
     );
 
     if (result.rowCount === 0) {
