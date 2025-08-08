@@ -95,6 +95,7 @@ import kotlin.math.sqrt as kSqrt
 import kotlin.math.atan2 as kAtan2
 import kotlin.math.pow as kPow
 import androidx.core.graphics.get
+import com.mapbox.maps.plugin.gestures.gestures
 
 class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
@@ -146,6 +147,13 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         if (shouldUpdateLocation(lat, lon)) {
             currentLat = lat
             currentLon = lon
+
+            mapView.mapboxMap.setCamera(
+                CameraOptions.Builder()
+                    .center(Point.fromLngLat(lon, lat))
+                    .zoom(10.0)
+                    .build()
+            )
         }
     }
 
@@ -644,6 +652,16 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
             }
         }
+        mapView.gestures.apply {
+            rotateEnabled = false
+            scrollEnabled = false
+            pitchEnabled = false
+            quickZoomEnabled = false
+            pinchToZoomEnabled = false
+            doubleTapToZoomInEnabled = false
+            doubleTouchToZoomOutEnabled = false
+            simultaneousRotateAndPinchToZoomEnabled = false
+        }
     }
 
     private fun setupHazardGeofence(lat: Double, lon: Double, radius: Double, index: Int) {
@@ -832,7 +850,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
             } catch (e: Exception) {
                 Log.e("Forecast", "Error handling prediction success", e)
-                showToast("Failed to process forecast")
             }
         }
     }

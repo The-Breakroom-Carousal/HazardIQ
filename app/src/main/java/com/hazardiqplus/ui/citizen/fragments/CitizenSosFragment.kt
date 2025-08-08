@@ -74,7 +74,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mySosAdapter = MySosAdapter(mySosList, object : MySosAdapter.OnActionListener {
+        mySosAdapter = MySosAdapter(requireContext(), mySosList, object : MySosAdapter.OnActionListener {
             override fun onDelete(event: SosEvent) {
                 deleteMySos(event)
             }

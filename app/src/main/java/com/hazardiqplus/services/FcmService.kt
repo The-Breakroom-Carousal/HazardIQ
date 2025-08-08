@@ -21,7 +21,6 @@ import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.UserResponse
 import com.hazardiqplus.ui.responder.ReactSosActitvity
-import com.hazardiqplus.utils.SosActionReceiver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -52,38 +51,8 @@ class FcmService : FirebaseMessagingService(){
         val title = remoteMessage.notification?.title ?: "🚨 SOS Alert"
         val body = remoteMessage.notification?.body ?: "Someone needs help nearby!"
 
-        val sosId = remoteMessage.data["id"]?.toIntOrNull() ?: -1
         val requesterName = remoteMessage.data["name"] ?: "Unknown"
 
-        // Accept action
-        val acceptIntent = Intent(this, SosActionReceiver::class.java).apply {
-            action = "ACTION_ACCEPT"
-            putExtra("sos_id", sosId)
-            putExtra("requesterName", requesterName)
-        }
-
-        val acceptPendingIntent = PendingIntent.getBroadcast(
-            this,
-            sosId, // unique requestCode
-            acceptIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Decline action
-        val declineIntent = Intent(this, SosActionReceiver::class.java).apply {
-            action = "ACTION_DECLINE"
-            putExtra("sos_id", sosId)
-            putExtra("requesterName", requesterName)
-        }
-
-        val declinePendingIntent = PendingIntent.getBroadcast(
-            this,
-            sosId + 1,
-            declineIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Tap intent (opens ReactSosActivity)
         val tapIntent = Intent(this, ReactSosActitvity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("lat", remoteMessage.data["lat"])
@@ -100,13 +69,15 @@ class FcmService : FirebaseMessagingService(){
         val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.sos)
             .setContentTitle(title)
-            .setContentText(body)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentText("Tap to respond")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
             .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pendingTapIntent)
-            .addAction(R.drawable.check_24px, "Accept", acceptPendingIntent)
-            .addAction(R.drawable.round_remove_circle_outline_24, "Decline", declinePendingIntent)
             .build()
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
@@ -122,8 +93,6 @@ class FcmService : FirebaseMessagingService(){
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FCM_TOKEN", "New token generated: $token")
-
-        // If a user is logged in, send the token to your server.
         Firebase.auth.currentUser?.let {
             sendTokenToServer(token)
         }
@@ -132,19 +101,13 @@ class FcmService : FirebaseMessagingService(){
     private fun sendTokenToServer(token: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-
                 val idToken = Firebase.auth.currentUser?.getIdToken(true)?.await()?.token
                 if (idToken == null) {
                     Log.e("FCM_TOKEN", "User is not authenticated, cannot send token.")
                     return@launch
                 }
-
-
                 val request = FcmTokenUpdateRequest(fcmToken = token)
-
-                // 3. Make the API call using your Retrofit instance
                 val call = RetrofitClient.instance.updateUser(idToken, request)
-
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
                         if (response.isSuccessful) {
@@ -159,7 +122,6 @@ class FcmService : FirebaseMessagingService(){
                         Log.e("UpdateUser", "Error: ${t.message}", t)
                     }
                 })
-
             } catch (e: Exception) {
                 Log.e("FCM_TOKEN", "Error sending FCM token to server", e)
             }

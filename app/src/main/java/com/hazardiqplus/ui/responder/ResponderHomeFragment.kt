@@ -69,7 +69,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
         tabLayout.addTab(tabLayout.newTab().setText("All Requests"))
 
         recyclerRequests.layoutManager = LinearLayoutManager(requireContext())
-        adapter = SosRequestAdapter(this@ResponderHomeFragment)
+        adapter = SosRequestAdapter(this@ResponderHomeFragment, requireContext())
         recyclerRequests.adapter = adapter
 
         lifecycleScope.launch {

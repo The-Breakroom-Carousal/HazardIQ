@@ -1,6 +1,7 @@
 package com.hazardiqplus.adapters
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
@@ -16,7 +17,8 @@ import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.ui.responder.ReactSosActitvity
 
 class SosRequestAdapter(
-    private val listener: SosActionListener
+    private val listener: SosActionListener,
+    private val context: Context
 ) : RecyclerView.Adapter<SosRequestAdapter.SosViewHolder>() {
 
     private val events = mutableListOf<SosEvent>()
@@ -82,7 +84,9 @@ class SosRequestAdapter(
 
         holder.btnAccept.setOnClickListener {
             if (event.progress == "acknowledged") {
-                Toast.makeText(holder.itemView.context, "Chat with ${event.name}", Toast.LENGTH_SHORT).show()
+                /*val intent = Intent(context, ChatActivity::class.java)
+                intent.putExtra("sosId", event.id.toString())
+                context.startActivity(intent)*/
             } else {
                 listener.onAccept(event)
             }
