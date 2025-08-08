@@ -1,6 +1,7 @@
 package com.hazardiqplus.ui.citizen.fragments
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
@@ -17,6 +18,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -29,6 +31,10 @@ import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.data.SosRequest
 import com.hazardiqplus.data.SosResponse
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -38,9 +44,13 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var btnSos: Button
+    private lateinit var tvLocation: TextView
+    private lateinit var tvCurrentTime: TextView
     private lateinit var mySosRecycler: RecyclerView
     private lateinit var mySosAdapter: MySosAdapter
+    private lateinit var tvNoRequests: TextView
     private val mySosList = mutableListOf<SosEvent>()
+    private var fetchJob: Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,8 +59,11 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_citizen_sos, container, false)
         btnSos = view.findViewById(R.id.btnSos)
+        tvLocation = view.findViewById(R.id.tvLocation)
+        tvCurrentTime = view.findViewById(R.id.tvCurrentTime)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         mySosRecycler = view.findViewById(R.id.recyclerMySos)
+        tvNoRequests = view.findViewById(R.id.tvNoRequests)
         setupEmergencyContacts(view)
         return view
     }
@@ -66,11 +79,28 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
         mySosRecycler.layoutManager = LinearLayoutManager(requireContext())
         mySosRecycler.adapter = mySosAdapter
 
-        getUserLocation()
+        lifecycleScope.launch {
+            getUserLocation()
+        }
 
         btnSos.setOnClickListener {
             triggerSosCall()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        fetchJob = lifecycleScope.launch {
+            while (isActive) {
+                getUserLocation()
+                delay(10_000)
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        fetchJob?.cancel()
     }
 
     private fun setupEmergencyContacts(view: View) {
@@ -125,6 +155,13 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
                             mySosList.clear()
                             mySosList.addAll(response.body()!!.filter { it.firebase_uid == uid })
                             mySosAdapter.notifyDataSetChanged()
+                            if (mySosList.isEmpty()) {
+                                mySosRecycler.visibility = View.GONE
+                                tvNoRequests.visibility = View.VISIBLE
+                            } else {
+                                tvNoRequests.visibility = View.GONE
+                                mySosRecycler.visibility = View.VISIBLE
+                            }
                         } else {
                             Toast.makeText(requireContext(), "Couldn't fetch your requests", Toast.LENGTH_SHORT).show()
                         }
@@ -160,6 +197,9 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
     }
 
     private fun triggerSosCall() {
+        if (mySosList.size == 1) {
+
+        }
         val emergencyTypes = arrayOf("Medical Emergency", "Fire", "Police", "Disaster Management")
         var selectedIndex = 0
 
@@ -176,6 +216,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
             .show()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun sendSos(type: String) {
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
@@ -251,6 +292,9 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
                     val geocoder = Geocoder(requireContext(), Locale.getDefault())
                     val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
                     val city = address?.locality ?: "Unknown"
+                    val state = address?.adminArea ?: "Unknown"
+                    tvLocation.text = "Location: $city, $state"
+                    tvCurrentTime.text = "Current time: ${java.text.SimpleDateFormat("hh:mm a", Locale.getDefault()).format(java.util.Date())}"
                     fetchMySosRequests(city)
                 } else {
                     Toast.makeText(requireContext(), "Failed to get location", Toast.LENGTH_SHORT).show()

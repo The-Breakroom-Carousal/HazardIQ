@@ -490,7 +490,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                         tvTemperature.text = "${weather.temperature}°C"
                         tvWeather.text = weather.weatherCondition
                     } catch (_: Exception) {
-                        showToast("Failed to load weather data")
+                        Log.d("Weather", "Failed to load weather")
                     }
                 }
             }
@@ -641,42 +641,46 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun setupHazardGeofence(lat: Double, lon: Double, radius: Double, index: Int) {
-        geofencingClient = LocationServices.getGeofencingClient(requireContext())
+        try {
+            geofencingClient = LocationServices.getGeofencingClient(requireContext())
 
-        val geofence = Geofence.Builder()
-            .setRequestId("hazard_zone_$index")
-            .setCircularRegion(lat, lon, (radius * 1000).toFloat()) // meters
-            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-            .setLoiteringDelay(0)
-            .setExpirationDuration(Geofence.NEVER_EXPIRE)
-            .build()
+            val geofence = Geofence.Builder()
+                .setRequestId("hazard_zone_$index")
+                .setCircularRegion(lat, lon, (radius * 1000).toFloat()) // meters
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .setLoiteringDelay(0)
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .build()
 
-        val geofencingRequest = GeofencingRequest.Builder()
-            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-            .addGeofence(geofence)
-            .build()
+            val geofencingRequest = GeofencingRequest.Builder()
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                .addGeofence(geofence)
+                .build()
 
-        val intent = Intent(requireContext(), HazardGeofenceReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            requireContext(),
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
+            val intent = Intent(requireContext(), HazardGeofenceReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                requireContext(),
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            )
 
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            geofencingClient.addGeofences(geofencingRequest, pendingIntent)
-                .addOnSuccessListener { Log.d("HazardGeofence", "Geofence added!") }
-                .addOnFailureListener { e ->
-                    if (e is ApiException) {
-                        Log.e(
-                            "HazardGeofence",
-                            "Failed: ${e.statusCode} ${GeofenceStatusCodes.getStatusCodeString(e.statusCode)}"
-                        )
-                    } else {
-                        Log.e("HazardGeofence", "Failed: ${e.message}")
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                geofencingClient.addGeofences(geofencingRequest, pendingIntent)
+                    .addOnSuccessListener { Log.d("HazardGeofence", "Geofence added!") }
+                    .addOnFailureListener { e ->
+                        if (e is ApiException) {
+                            Log.e(
+                                "HazardGeofence",
+                                "Failed: ${e.statusCode} ${GeofenceStatusCodes.getStatusCodeString(e.statusCode)}"
+                            )
+                        } else {
+                            Log.e("HazardGeofence", "Failed: ${e.message}")
+                        }
                     }
-                }
+            }
+        } catch (e: Exception) {
+            Log.e("HazardGeofence", "Failed to add geofence", e)
         }
     }
 
@@ -776,7 +780,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
 
                 override fun onFailure(call: Call<PredictResponse>, t: Throwable) {
-                    showToast("Network error: ${t.message}")
+                    Log.d("PredictAirQuality", "Error: ${t.message}")
                 }
             })
     }
@@ -1004,12 +1008,17 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun getBitmapFromVectorDrawable(drawableId: Int): Bitmap? {
-        val drawable = ContextCompat.getDrawable(requireContext(), drawableId) ?: return null
-        val bitmap = createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight)
-        val canvas = Canvas(bitmap)
-        drawable.setBounds(0, 0, canvas.width, canvas.height)
-        drawable.draw(canvas)
-        return bitmap
+        try {
+            val drawable = ContextCompat.getDrawable(requireContext(), drawableId) ?: return null
+            val bitmap = createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight)
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            return bitmap
+        } catch (e: Exception) {
+            Log.e("Bitmap", "Error getting bitmap from vector drawable", e)
+            return null
+        }
     }
 
     override fun onDestroyView() {

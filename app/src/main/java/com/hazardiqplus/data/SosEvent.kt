@@ -9,6 +9,7 @@ data class SosEvent(
     val city: String,
     val progress: String,
     val timestamp: String,
+    val responderId: String?,
     val name: String,
     val email: String
 )

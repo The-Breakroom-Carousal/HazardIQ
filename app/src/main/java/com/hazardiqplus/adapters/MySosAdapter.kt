@@ -1,5 +1,6 @@
 package com.hazardiqplus.adapters
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +22,8 @@ class MySosAdapter(
     inner class SosViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvType: TextView = view.findViewById(R.id.tvSosType)
         val tvCity: TextView = view.findViewById(R.id.tvSosCity)
+        val tvStatus: TextView = view.findViewById(R.id.tvStatus)
+        val tvResponderDetails: TextView = view.findViewById(R.id.tvResponderDetails)
         val btnDelete: Button = view.findViewById(R.id.btnDelete)
     }
 
@@ -30,10 +33,18 @@ class MySosAdapter(
         return SosViewHolder(view)
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: SosViewHolder, position: Int) {
         val event = sosList[position]
         holder.tvType.text = event.type
         holder.tvCity.text = event.city
+        holder.tvStatus.text = "Status: ${event.progress.replaceFirstChar { it.uppercase()}}"
+        if (event.progress == "acknowledged") {
+            holder.tvResponderDetails.text = "Responder: Sayantan Sen"
+            holder.tvResponderDetails.visibility = View.VISIBLE
+        } else {
+            holder.tvResponderDetails.visibility = View.GONE
+        }
 
         holder.btnDelete.setOnClickListener {
             listener.onDelete(event)

@@ -22,6 +22,23 @@
         android:text="Dhanbad"
         android:textColor="#555555" />
 
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Status: Pending"
+        android:textColor="#777777"
+        android:layout_marginTop="4dp"/>
+
+    <TextView
+        android:id="@+id/tvResponderDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Responder: N/A"
+        android:visibility="gone"
+        android:textColor="#4CAF50"
+        android:layout_marginTop="2dp"/>
+
     <Button
         android:id="@+id/btnDelete"
         android:layout_width="wrap_content"

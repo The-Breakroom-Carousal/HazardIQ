@@ -146,7 +146,6 @@ class LoginSignupActivity : AppCompatActivity() {
             firebaseAuthWithGoogle(account.idToken!!)
         }
     }
-    
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         firebaseAuth.signInWithCredential(credential)
@@ -200,6 +199,7 @@ class LoginSignupActivity : AppCompatActivity() {
             ?.addOnSuccessListener { result ->
                 val token = result.token
                 if (token != null) {
+                    Log.d("Token", "Token: $token")
                     checkUserRoleAndRedirect(token)
                 }
             }

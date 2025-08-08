@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import com.google.firebase.auth.FirebaseAuth
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.UpdateProgressRequest
 import retrofit2.Call
@@ -19,7 +20,15 @@ class SosActionReceiver : BroadcastReceiver() {
         when (action) {
             "ACTION_ACCEPT" -> {
                 if (sosId != -1) {
-                    val request = UpdateProgressRequest(progress = "acknowledged")
+                    var idToken = ""
+                    FirebaseAuth.getInstance().currentUser?.getIdToken(true)
+                        ?.addOnSuccessListener { result ->
+                            val token = result.token
+                            if (token != null) {
+                                idToken = token
+                            }
+                        }
+                    val request = UpdateProgressRequest(progress = "acknowledged", idToken)
                     RetrofitClient.instance.updateSosProgress(sosId, request)
                         .enqueue(object : Callback<com.hazardiqplus.data.UpdateProgressResponse> {
                             override fun onResponse(

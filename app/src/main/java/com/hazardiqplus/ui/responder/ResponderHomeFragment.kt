@@ -18,11 +18,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.tabs.TabLayout
+import com.google.firebase.auth.FirebaseAuth
 import com.hazardiqplus.R
 import com.hazardiqplus.adapters.SosRequestAdapter
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.data.UpdateProgressRequest
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
@@ -41,6 +45,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
     private val declinedRequests = mutableListOf<SosEvent>()
     private val acceptedRequests = mutableListOf<SosEvent>()
     private var currentLocation: String = "Unknown"
+    private var fetchJob: Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -79,6 +84,21 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
         })
     }
 
+    override fun onResume() {
+        super.onResume()
+        fetchJob = lifecycleScope.launch {
+            while (isActive) {
+                fetchSosRequests(currentLocation)
+                delay(10_000)
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        fetchJob?.cancel()
+    }
+
     private fun updateRecyclerForTab(position: Int) {
         val dataToShow = when (position) {
             0 -> pendingRequests
@@ -105,8 +125,9 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                         pendingRequests.clear()
                         pendingRequests.addAll(responseData.filter { it.progress == "pending" })
 
+                        val uid = FirebaseAuth.getInstance().currentUser?.uid
                         acceptedRequests.clear()
-                        acceptedRequests.addAll(responseData.filter { it.progress == "acknowledged" })
+                        acceptedRequests.addAll(responseData.filter { it.progress == "acknowledged" && it.responderId == uid })
 
                         updateRecyclerForTab(tabLayout.selectedTabPosition)
                     } else {
@@ -120,31 +141,37 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
             })
     }
     override fun onAccept(event: SosEvent) {
-        val request = UpdateProgressRequest(progress = "acknowledged")
-        RetrofitClient.instance.updateSosProgress(event.id, request)
-            .enqueue(object : Callback<com.hazardiqplus.data.UpdateProgressResponse> {
-                override fun onResponse(
-                    call: Call<com.hazardiqplus.data.UpdateProgressResponse>,
-                    response: Response<com.hazardiqplus.data.UpdateProgressResponse>
-                ) {
-                    if (response.isSuccessful && response.body()?.message != null) {
-                        Toast.makeText(requireContext(), "Request Accepted", Toast.LENGTH_SHORT).show()
+        FirebaseAuth.getInstance().currentUser?.getIdToken(true)
+            ?.addOnSuccessListener { result ->
+                val token = result.token
+                if (token != null) {
+                    val request = UpdateProgressRequest(progress = "acknowledged", token)
+                    RetrofitClient.instance.updateSosProgress(event.id, request)
+                        .enqueue(object : Callback<com.hazardiqplus.data.UpdateProgressResponse> {
+                            override fun onResponse(
+                                call: Call<com.hazardiqplus.data.UpdateProgressResponse>,
+                                response: Response<com.hazardiqplus.data.UpdateProgressResponse>
+                            ) {
+                                if (response.isSuccessful && response.body()?.message != null) {
+                                    Toast.makeText(requireContext(), "Request Accepted", Toast.LENGTH_SHORT).show()
 
-                        // Move from pending to accepted
-                        pendingRequests.remove(event)
-                        val updatedEvent = event.copy(progress = "acknowledged")
-                        acceptedRequests.add(updatedEvent)
+                                    pendingRequests.remove(event)
+                                    val updatedEvent = event.copy(progress = "acknowledged")
+                                    acceptedRequests.add(updatedEvent)
 
-                        updateRecyclerForTab(tabLayout.selectedTabPosition)
-                    } else {
-                        Toast.makeText(requireContext(), "Failed to accept request", Toast.LENGTH_SHORT).show()
-                    }
+                                    updateRecyclerForTab(tabLayout.selectedTabPosition)
+                                } else {
+                                    Log.e("ResponderHomeFragment", "Failed to accept request: ${response.errorBody()?.string()}")
+                                    Toast.makeText(requireContext(), "Failed to accept request", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            override fun onFailure(call: Call<com.hazardiqplus.data.UpdateProgressResponse>, t: Throwable) {
+                                Toast.makeText(requireContext(), "Network Error", Toast.LENGTH_SHORT).show()
+                            }
+                        })
                 }
-
-                override fun onFailure(call: Call<com.hazardiqplus.data.UpdateProgressResponse>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Network Error", Toast.LENGTH_SHORT).show()
-                }
-            })
+            }
     }
 
     override fun onDecline(event: SosEvent) {

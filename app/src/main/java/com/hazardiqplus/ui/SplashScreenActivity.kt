@@ -45,6 +45,7 @@ class SplashScreenActivity : AppCompatActivity() {
                     ?.addOnSuccessListener { result ->
                         val token = result.token
                         if (token != null) {
+                            Log.d("Token", "Token: $token")
                             checkUserRoleAndRedirect(token)
                         }
                     }
