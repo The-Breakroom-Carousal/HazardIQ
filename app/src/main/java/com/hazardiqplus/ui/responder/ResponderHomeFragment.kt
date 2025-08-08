@@ -121,7 +121,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                         val responseData = response.body()!!
 
                         allRequests.clear()
-                        allRequests.addAll(responseData)
+                        allRequests.addAll(responseData.filter { it.progress == "pending" || it.progress == "acknowledged" })
 
                         pendingRequests.clear()
                         pendingRequests.addAll(responseData.filter { it.progress == "pending" })
@@ -147,7 +147,6 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
             ?.addOnSuccessListener { result ->
                 val token = result.token
                 if (token != null) {
-                    Log.d("SosEvents", "Token: $token")
                     val request = UpdateProgressRequest(progress = "acknowledged", token)
                     RetrofitClient.instance.updateSosProgress(event.id, request)
                         .enqueue(object : Callback<UpdateProgressResponse> {
@@ -179,6 +178,41 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
         Toast.makeText(requireContext(), "Request Declined", Toast.LENGTH_SHORT).show()
         pendingRequests.remove(event)
         declinedRequests.add(event)
+        updateRecyclerForTab(tabLayout.selectedTabPosition)
+    }
+
+    override fun onMarkAsCompleted(event: SosEvent) {
+        FirebaseAuth.getInstance().currentUser?.getIdToken(true)
+            ?.addOnSuccessListener { result ->
+                val token = result.token
+                if (token != null) {
+                    val request = UpdateProgressRequest(progress = "resolved", token)
+                    RetrofitClient.instance.updateSosProgress(event.id, request)
+                        .enqueue(object : Callback<UpdateProgressResponse> {
+                            override fun onResponse(
+                                call: Call<UpdateProgressResponse>,
+                                response: Response<UpdateProgressResponse>
+                            ) {
+                                if (response.isSuccessful && response.body()?.message != null) {
+                                    Toast.makeText(requireContext(), "SOS Request Resolved", Toast.LENGTH_SHORT).show()
+
+                                    pendingRequests.remove(event)
+
+                                    updateRecyclerForTab(tabLayout.selectedTabPosition)
+                                } else {
+                                    Log.e("ResponderHomeFragment", "Failed to resolve request: ${response.errorBody()?.string()}")
+                                    Toast.makeText(requireContext(), "Failed to resolve request", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            override fun onFailure(call: Call<UpdateProgressResponse>, t: Throwable) {
+                                Toast.makeText(requireContext(), "Network Error", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                }
+            }
+        acceptedRequests.remove(event)
+        allRequests.remove(event)
         updateRecyclerForTab(tabLayout.selectedTabPosition)
     }
 

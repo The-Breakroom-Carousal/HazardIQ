@@ -312,6 +312,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                         circleOpacity(0.6)
                     }
                 )
+                if (!style.styleLayerExists("${layerId}-label"))
                 style.addLayer(
                     symbolLayer("${layerId}-label", sourceId) {
                         textField(Expression.get("label"))
@@ -346,14 +347,17 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
 
                 // Add sources
+                if (!style.styleSourceExists("hazard-polygon-source"))
                 style.addSource(geoJsonSource("hazard-polygon-source") {
                     featureCollection(FeatureCollection.fromFeatures(polygonFeatures))
                 })
+                if (!style.styleSourceExists("hazard-point-source"))
                 style.addSource(geoJsonSource("hazard-point-source") {
                     featureCollection(FeatureCollection.fromFeatures(pointFeatures))
                 })
 
                 // Fill polygon for radius
+                if (!style.styleLayerExists("hazard-radius-layer"))
                 style.addLayer(
                     com.mapbox.maps.extension.style.layers.generated.fillLayer("hazard-radius-layer", "hazard-polygon-source") {
                         fillColor("#FF0000")
@@ -368,6 +372,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
 
                 // Symbol for icon
+                if (!style.styleLayerExists("hazard-symbol-layer"))
                 style.addLayer(
                     symbolLayer("hazard-symbol-layer", "hazard-point-source") {
                         iconImage("hazard-icon")
@@ -378,6 +383,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 )
 
                 // Label above icon
+                if (!style.styleLayerExists("hazard-label-layer"))
                 style.addLayer(
                     symbolLayer("hazard-label-layer", "hazard-point-source") {
                         textField(Expression.get("hazard"))
@@ -1024,6 +1030,5 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     override fun onDestroyView() {
         super.onDestroyView()
         mapView.location.removeOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
-
     }
 }

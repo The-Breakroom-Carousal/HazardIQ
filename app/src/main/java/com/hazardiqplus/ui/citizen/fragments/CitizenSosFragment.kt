@@ -25,12 +25,15 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.hazardiqplus.adapters.MySosAdapter
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.data.SosRequest
 import com.hazardiqplus.data.SosResponse
+import com.hazardiqplus.data.UpdateProgressRequest
+import com.hazardiqplus.data.UpdateProgressResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -74,6 +77,9 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
         mySosAdapter = MySosAdapter(mySosList, object : MySosAdapter.OnActionListener {
             override fun onDelete(event: SosEvent) {
                 deleteMySos(event)
+            }
+            override fun onMarkAsResolved(event: SosEvent) {
+                markSosAsResolved(event)
             }
         })
         mySosRecycler.layoutManager = LinearLayoutManager(requireContext())
@@ -153,7 +159,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
                     override fun onResponse(call: Call<List<SosEvent>>, response: Response<List<SosEvent>>) {
                         if (response.isSuccessful && response.body() != null) {
                             mySosList.clear()
-                            mySosList.addAll(response.body()!!.filter { it.firebase_uid == uid })
+                            mySosList.addAll(response.body()!!.filter { it.firebase_uid == uid && (it.progress == "pending" || it.progress == "acknowledged")})
                             mySosAdapter.notifyDataSetChanged()
                             if (mySosList.isEmpty()) {
                                 mySosRecycler.visibility = View.GONE
@@ -194,6 +200,34 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
                     Toast.makeText(requireContext(), "Network error", Toast.LENGTH_SHORT).show()
                 }
             })
+    }
+
+    private fun markSosAsResolved(event: SosEvent) {
+        FirebaseAuth.getInstance().currentUser?.getIdToken(true)
+            ?.addOnSuccessListener { result ->
+                val token = result.token
+                if (token != null) {
+                    val request = UpdateProgressRequest(progress = "resolved", token)
+                    RetrofitClient.instance.updateSosProgress(event.id, request)
+                        .enqueue(object : Callback<UpdateProgressResponse> {
+                            override fun onResponse(
+                                call: Call<UpdateProgressResponse>,
+                                response: Response<UpdateProgressResponse>
+                            ) {
+                                if (response.isSuccessful && response.body()?.message != null) {
+                                    Toast.makeText(requireContext(), "SOS Request Resolved", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Log.e("ResponderHomeFragment", "Failed to resolve request: ${response.errorBody()?.string()}")
+                                    Toast.makeText(requireContext(), "Failed to resolve request", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            override fun onFailure(call: Call<UpdateProgressResponse>, t: Throwable) {
+                                Toast.makeText(requireContext(), "Network Error", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                }
+            }
     }
 
     private fun triggerSosCall() {

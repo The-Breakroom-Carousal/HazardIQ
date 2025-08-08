@@ -2,7 +2,6 @@ package com.hazardiqplus.adapters
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +24,7 @@ class SosRequestAdapter(
     interface SosActionListener {
         fun onAccept(event: SosEvent)
         fun onDecline(event: SosEvent)
+        fun onMarkAsCompleted(event: SosEvent)
     }
 
     inner class SosViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -37,6 +37,7 @@ class SosRequestAdapter(
         val imgType: ImageView = view.findViewById(R.id.imgType)
         val btnAccept: Button = view.findViewById(R.id.btnAccept)
         val btnDecline: Button = view.findViewById(R.id.btnDecline)
+        val btnMarkAsResolved: Button = view.findViewById(R.id.btnMarkAsResolved)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SosViewHolder {
@@ -56,13 +57,19 @@ class SosRequestAdapter(
         holder.tvTimeAgo.text = event.timestamp
         holder.tvDescription.text = event.type
 
-        // Change button text based on progress
-        if (event.progress == "acknowledged") {
-            holder.btnAccept.text = "Chat"
-            holder.btnDecline.text = "Map"
-        } else {
+        if (event.progress == "pending") {
             holder.btnAccept.text = "Accept"
             holder.btnDecline.text = "Decline"
+            holder.btnMarkAsResolved.visibility = View.GONE
+        } else if (event.progress == "acknowledged" && event.responder_uid == FirebaseAuth.getInstance().currentUser?.uid) {
+            holder.btnAccept.text = "Chat"
+            holder.btnDecline.text = "Map"
+            holder.btnMarkAsResolved.visibility = View.VISIBLE
+        }
+        else {
+            holder.btnAccept.visibility = View.GONE
+            holder.btnDecline.visibility = View.GONE
+            holder.btnMarkAsResolved.visibility = View.GONE
         }
 
         val iconRes = when (event.type.lowercase()) {
@@ -92,10 +99,8 @@ class SosRequestAdapter(
                 listener.onDecline(event)
             }
         }
-
-        if (event.progress == "acknowledged" && event.responder_uid != FirebaseAuth.getInstance().currentUser?.uid) {
-            holder.btnAccept.visibility = View.GONE
-            holder.btnDecline.visibility = View.GONE
+        holder.btnMarkAsResolved.setOnClickListener {
+            listener.onMarkAsCompleted(event)
         }
     }
 

@@ -13,6 +13,7 @@ import com.hazardiqplus.data.SosResponse
 import com.hazardiqplus.data.UpdateProgressRequest
 import com.hazardiqplus.data.UpdateProgressResponse
 import com.hazardiqplus.data.User
+import com.hazardiqplus.data.UserName
 import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
 import com.hazardiqplus.data.UserResponse
@@ -66,4 +67,6 @@ interface ApiService {
         @Body request: FcmTokenUpdateRequest
     ): Call<UserResponse>
 
+    @GET("api/get-name")
+    fun getUserName(@Header("uid") uid: String): Call<UserName>
 }

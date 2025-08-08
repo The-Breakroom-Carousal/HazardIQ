@@ -7,13 +7,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.hazardiqplus.R
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosEvent
+import com.hazardiqplus.data.UpdateProgressResponse
 import com.hazardiqplus.data.User
+import com.hazardiqplus.data.UserName
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -25,6 +29,7 @@ class MySosAdapter(
 
     interface OnActionListener {
         fun onDelete(event: SosEvent)
+        fun onMarkAsResolved(event: SosEvent)
     }
 
     inner class SosViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -32,7 +37,8 @@ class MySosAdapter(
         val tvCity: TextView = view.findViewById(R.id.tvSosCity)
         val tvStatus: TextView = view.findViewById(R.id.tvStatus)
         val tvResponderDetails: TextView = view.findViewById(R.id.tvResponderDetails)
-        val btnDelete: Button = view.findViewById(R.id.btnDelete)
+        val btnCancel: Button = view.findViewById(R.id.btnCancel)
+        val btnMarkAsResolved: Button = view.findViewById(R.id.btnMarkAsResolvedC)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SosViewHolder {
@@ -48,37 +54,33 @@ class MySosAdapter(
         holder.tvCity.text = event.city
         holder.tvStatus.text = "Status: ${event.progress.replaceFirstChar { it.uppercase()}}"
         if (event.progress == "acknowledged" && event.responder_uid != null) {
-            Firebase.auth.currentUser?.getIdToken(true)
-                ?.addOnSuccessListener { tokenResult ->
-                    val idToken = tokenResult.token
-                    RetrofitClient.instance.getUserDetails(idToken ?: "")
-                        .enqueue(object : Callback<User> {
-                            override fun onResponse(call: Call<User>, response: Response<User>) {
-                                if (response.isSuccessful && response.body() != null) {
-                                    holder.tvResponderDetails.text = "Responder: ${response.body()?.name}"
-                                    holder.tvResponderDetails.visibility = View.VISIBLE
-                                }
-                            }
+            RetrofitClient.instance.getUserName(event.responder_uid)
+                .enqueue(object : Callback<UserName> {
+                    override fun onResponse(
+                        call: Call<UserName>,
+                        response: Response<UserName>
+                    ) {
+                        if (response.isSuccessful && response.body() != null) {
+                            holder.tvResponderDetails.text = "Responder: ${response.body()?.name}"
+                            holder.tvResponderDetails.visibility = View.VISIBLE
+                        }
+                    }
 
-                            override fun onFailure(call: Call<User>, t: Throwable) {
-                                Log.d("MySosAdapter", "Failed to fetch user details")
-                            }
-                        })
-                }
+                    override fun onFailure(call: Call<UserName>, t: Throwable) {
+                        Log.d("MySosAdapter", "Failed to fetch user details")
+                    }
+                })
         } else {
             holder.tvResponderDetails.visibility = View.GONE
         }
 
-        holder.btnDelete.setOnClickListener {
+        holder.btnCancel.setOnClickListener {
             listener.onDelete(event)
+        }
+        holder.btnMarkAsResolved.setOnClickListener {
+            listener.onMarkAsResolved(event)
         }
     }
 
     override fun getItemCount() = sosList.size
-
-    fun updateData(newList: List<SosEvent>) {
-        sosList.clear()
-        sosList.addAll(newList)
-        notifyDataSetChanged()
-    }
 }
