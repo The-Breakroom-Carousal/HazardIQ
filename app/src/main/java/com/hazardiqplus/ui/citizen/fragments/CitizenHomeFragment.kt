@@ -60,6 +60,7 @@ import com.hazardiqplus.data.PredictResponse
 import com.hazardiqplus.data.SaveHazardRequest
 import com.hazardiqplus.data.SaveHazardResponse
 import com.hazardiqplus.ml.BestModel
+import com.hazardiqplus.ui.ProfileActivity
 import com.hazardiqplus.utils.WeatherReportScheduler
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection

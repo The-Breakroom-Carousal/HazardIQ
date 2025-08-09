@@ -105,6 +105,8 @@ dependencies {
     //splashscreen
     implementation("androidx.core:core-splashscreen:1.0.1")
 
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+
     //socket.io
     implementation("io.socket:socket.io-client:2.1.0") {
         exclude("org.json", "json")
