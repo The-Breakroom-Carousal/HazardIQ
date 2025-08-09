@@ -8,6 +8,7 @@ const firRoutes = require('./routes/fir');
 const sosRoutes=require('./routes/sos');
 const modelRoutes = require('./routes/model');
 const hazardRoutes=require('./routes/hazard');
+const chatbotRoutes=require('./routes/chatbot');
 const createTables = require('./initDB');
 
 const app = express();
@@ -28,7 +29,7 @@ app.use('/api/', firRoutes);
 app.use('/api/',sosRoutes);
 app.use('/api/',modelRoutes);
 app.use('/api/',hazardRoutes);
-
+app.use('/api',chatbotRoutes);
 require('./routes/hazardChatSocket')(io);
 require('./routes/sosSocket')(io);
 
