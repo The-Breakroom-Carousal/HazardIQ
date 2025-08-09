@@ -24,7 +24,7 @@
         android:theme="@style/Theme.HazardIQ"
         tools:targetApi="31">
         <activity
-            android:name=".ui.citizen.fragments.home.HazardChatActivity"
+            android:name=".ui.citizen.HazardChatActivity"
             android:exported="false" />
         <activity
             android:name=".ui.SplashScreenActivity"

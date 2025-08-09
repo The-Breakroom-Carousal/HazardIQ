@@ -1,37 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/citizenMain"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".ui.citizen.CitizenMainActivity">
 
     <FrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
 
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/tabToggleGroup"
-        style="@style/Widget.Material3.MaterialButtonGroup.Connected"
-        android:layout_width="wrap_content"
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center|bottom"
-        app:singleSelection="true"
-        app:selectionRequired="true"
-        android:layout_marginBottom="32dp">
-        <Button
-            android:id="@+id/btnHome"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Home" />
-        <Button
-            android:id="@+id/btnSos"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="SOS" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+        android:layout_gravity="bottom"
+        app:menu="@menu/menu_citizen_bottom_nav" />
+</LinearLayout>

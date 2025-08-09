@@ -9,7 +9,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#fff2f0">
+        android:background="?attr/android:colorBackground">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -60,6 +60,17 @@
                         android:textAlignment="center"
                         android:gravity="center"
                         android:layout_marginBottom="16dp"/>
+
+                    <TextView
+                        android:id="@+id/tvSosBlockedMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="You can send a new SOS only after your last request has been resolved."
+                        android:textSize="14sp"
+                        android:textColor="@android:color/holo_red_dark"
+                        android:padding="8dp"
+                        android:gravity="center"
+                        android:visibility="gone"/>
 
                     <!-- SOS Button -->
                     <Button

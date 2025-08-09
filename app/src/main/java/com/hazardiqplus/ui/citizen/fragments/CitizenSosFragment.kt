@@ -47,6 +47,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var btnSos: Button
+    private lateinit var tvSosBlockedMessage: TextView
     private lateinit var tvLocation: TextView
     private lateinit var tvCurrentTime: TextView
     private lateinit var mySosRecycler: RecyclerView
@@ -63,6 +64,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
         val view = inflater.inflate(R.layout.fragment_citizen_sos, container, false)
         btnSos = view.findViewById(R.id.btnSos)
         tvLocation = view.findViewById(R.id.tvLocation)
+        tvSosBlockedMessage = view.findViewById(R.id.tvSosBlockedMessage)
         tvCurrentTime = view.findViewById(R.id.tvCurrentTime)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         mySosRecycler = view.findViewById(R.id.recyclerMySos)
@@ -92,6 +94,14 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
         btnSos.setOnClickListener {
             triggerSosCall()
         }
+
+        if (mySosList.isEmpty()) {
+            mySosRecycler.visibility = View.GONE
+            tvNoRequests.visibility = View.VISIBLE
+        } else {
+            tvNoRequests.visibility = View.GONE
+            mySosRecycler.visibility = View.VISIBLE
+        }
     }
 
     override fun onResume() {
@@ -99,7 +109,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
         fetchJob = lifecycleScope.launch {
             while (isActive) {
                 getUserLocation()
-                delay(10_000)
+                delay(1_000)
             }
         }
     }
@@ -159,8 +169,13 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
                     override fun onResponse(call: Call<List<SosEvent>>, response: Response<List<SosEvent>>) {
                         if (response.isSuccessful && response.body() != null) {
                             mySosList.clear()
-                            mySosList.addAll(response.body()!!.filter { it.firebase_uid == uid && (it.progress == "pending" || it.progress == "acknowledged")})
+                            val activeRequests = response.body()!!.filter {
+                                it.firebase_uid == uid && (it.progress == "pending" || it.progress == "acknowledged")
+                            }
+                            mySosList.addAll(activeRequests)
                             mySosAdapter.notifyDataSetChanged()
+
+                            // Show/Hide empty state
                             if (mySosList.isEmpty()) {
                                 mySosRecycler.visibility = View.GONE
                                 tvNoRequests.visibility = View.VISIBLE
@@ -168,6 +183,16 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
                                 tvNoRequests.visibility = View.GONE
                                 mySosRecycler.visibility = View.VISIBLE
                             }
+
+                            // Toggle SOS button based on active requests
+                            if (activeRequests.isNotEmpty()) {
+                                btnSos.visibility = View.GONE
+                                tvSosBlockedMessage.visibility = View.VISIBLE
+                            } else {
+                                btnSos.visibility = View.VISIBLE
+                                tvSosBlockedMessage.visibility = View.GONE
+                            }
+
                         } else {
                             Toast.makeText(requireContext(), "Couldn't fetch your requests", Toast.LENGTH_SHORT).show()
                         }

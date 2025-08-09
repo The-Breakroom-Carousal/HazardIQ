@@ -20,7 +20,7 @@ import com.google.android.gms.location.LocationServices
 import com.hazardiqplus.R
 import com.hazardiqplus.clients.AirQualityApiClient
 import com.hazardiqplus.data.CityPoint
-import com.hazardiqplus.ui.citizen.fragments.home.CitizenHomeFragment.AQIData
+import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment.AQIData
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point

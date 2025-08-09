@@ -1,4 +1,4 @@
-package com.hazardiqplus.ui.citizen.fragments.home
+package com.hazardiqplus.ui.citizen.fragments
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -27,32 +27,61 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.get
+import androidx.core.graphics.scale
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.work.WorkManager
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofenceStatusCodes
+import com.google.android.gms.location.GeofencingClient
+import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.loadingindicator.LoadingIndicator
+import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
 import com.hazardiqplus.R
+import com.hazardiqplus.adapters.PredictedAqi
+import com.hazardiqplus.adapters.PredictedAqiAdapter
 import com.hazardiqplus.clients.AirQualityApiClient
 import com.hazardiqplus.clients.CityModelMapper
+import com.hazardiqplus.clients.HazardGeofenceReceiver
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.clients.WeatherApiClient
+import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
+import com.hazardiqplus.data.SaveHazardRequest
+import com.hazardiqplus.data.SaveHazardResponse
+import com.hazardiqplus.ml.BestModel
+import com.hazardiqplus.utils.WeatherReportScheduler
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
-import com.mapbox.maps.extension.style.expressions.dsl.generated.*
+import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.circleLayer
+import com.mapbox.maps.extension.style.layers.generated.fillLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.extension.style.sources.getSource
+import com.mapbox.maps.plugin.gestures.gestures
+import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
+import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.turf.TurfConstants
+import com.mapbox.turf.TurfTransformation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -63,42 +92,18 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
-import androidx.core.graphics.scale
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.work.WorkManager
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.location.Geofence
-import com.google.android.gms.location.GeofenceStatusCodes
-import com.google.android.gms.location.GeofencingClient
-import com.google.android.gms.location.GeofencingRequest
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputEditText
-import com.hazardiqplus.adapters.PredictedAqi
-import com.hazardiqplus.adapters.PredictedAqiAdapter
-import com.hazardiqplus.clients.HazardGeofenceReceiver
-import com.hazardiqplus.data.FindHazardResponse
-import com.hazardiqplus.data.SaveHazardRequest
-import com.hazardiqplus.data.SaveHazardResponse
-import com.hazardiqplus.ml.BestModel
-import com.hazardiqplus.ui.citizen.fragments.FullScreenMapFragment
-import com.hazardiqplus.utils.WeatherReportScheduler
-import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
-import com.mapbox.maps.plugin.locationcomponent.location
-import com.mapbox.turf.TurfConstants
-import com.mapbox.turf.TurfTransformation
-import kotlin.math.sin as kSin
-import kotlin.math.cos as kCos
-import kotlin.math.sqrt as kSqrt
-import kotlin.math.atan2 as kAtan2
-import kotlin.math.pow as kPow
-import androidx.core.graphics.get
-import com.mapbox.maps.plugin.gestures.gestures
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
+    private lateinit var aqiCardView: MaterialCardView
     private lateinit var tvCity: TextView
     private lateinit var tvAqi: TextView
     private lateinit var tvAqiStatus: TextView
@@ -107,6 +112,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private lateinit var tvCurrentTime: TextView
     private lateinit var predictedAdapter: PredictedAqiAdapter
     private lateinit var predictedRecycler: RecyclerView
+    private lateinit var predictionProgressIndicator: LinearProgressIndicator
     private lateinit var loadingIndicator: LoadingIndicator
     private lateinit var mapView: MapView
     private lateinit var btnFullScreenMap: ImageView
@@ -164,6 +170,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     ): View {
         val view = inflater.inflate(R.layout.fragment_citizen_home, container, false)
         initViews(view)
+        aqiCardView.setBackgroundResource(R.drawable.bg_aqi_good)
         setupCameraLauncher()
         setupPermissions()
         getUserLocation()
@@ -174,7 +181,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun checkAndScheduleAqiReport() {
-        val infos = WorkManager.getInstance(requireContext())
+        val infos = WorkManager.Companion.getInstance(requireContext())
             .getWorkInfosForUniqueWorkLiveData("WeatherReport")
             .value
         Log.d("WeatherReport", "Infos: $infos")
@@ -232,13 +239,24 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 val aqi = calculateAQIforShow(pm25, pm10)
                 tvAqi.text = "$aqi"
 
-                val quality = when {
-                    aqi < 50 -> "Good"
-                    aqi < 100 -> "Moderate"
-                    aqi < 200 -> "Unhealthy"
+                val statusText = when (aqi) {
+                    in 0..50 -> "Good"
+                    in 51..100 -> "Moderate"
+                    in 101..150 -> "Unhealthy"
+                    in 151..200 -> "Unhealthy (Sensitive)"
+                    in 201..300 -> "Very Unhealthy"
                     else -> "Hazardous"
                 }
-                tvAqiStatus.text = quality
+                val bgRes = when (aqi) {
+                    in 0..50 -> R.drawable.bg_aqi_good
+                    in 51..100 -> R.drawable.bg_aqi_moderate
+                    in 101..150 -> R.drawable.bg_aqi_unhealthy
+                    in 151..200 -> R.drawable.bg_aqi_unhealthy_sensitive
+                    in 201..300 -> R.drawable.bg_aqi_very_unhealthy
+                    else -> R.drawable.bg_aqi_hazardous
+                }
+                tvAqiStatus.text = statusText
+                aqiCardView.setBackgroundResource(bgRes)
 
                 val geocoder = Geocoder(requireContext(), Locale.getDefault())
                 val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
@@ -320,17 +338,18 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                         circleOpacity(0.6)
                     }
                 )
-                if (!style.styleLayerExists("${layerId}-label"))
-                style.addLayer(
-                    symbolLayer("${layerId}-label", sourceId) {
-                        textField(Expression.get("label"))
-                        textSize(12.0)
-                        textColor("#000000")
-                        textHaloColor("#FFFFFF")
-                        textHaloWidth(1.0)
-                        textOffset(listOf(0.0, 1.5))
-                    }
-                )
+                if (!style.styleLayerExists("${layerId}-label")) {
+                    style.addLayer(
+                        symbolLayer("${layerId}-label", sourceId) {
+                            textField(Expression.Companion.get("label"))
+                            textSize(12.0)
+                            textColor("#000000")
+                            textHaloColor("#FFFFFF")
+                            textHaloWidth(1.0)
+                            textOffset(listOf(0.0, 1.5))
+                        }
+                    )
+                }
             } else if (sourceId == "hazard-source") {
                 Log.d("Hazard", "Showing Hazards")
                 // Build separate feature lists
@@ -355,23 +374,29 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
 
                 // Add sources
-                if (!style.styleSourceExists("hazard-polygon-source"))
-                style.addSource(geoJsonSource("hazard-polygon-source") {
-                    featureCollection(FeatureCollection.fromFeatures(polygonFeatures))
-                })
-                if (!style.styleSourceExists("hazard-point-source"))
-                style.addSource(geoJsonSource("hazard-point-source") {
-                    featureCollection(FeatureCollection.fromFeatures(pointFeatures))
-                })
+                if (!style.styleSourceExists("hazard-polygon-source")) {
+                    style.addSource(geoJsonSource("hazard-polygon-source") {
+                        featureCollection(FeatureCollection.fromFeatures(polygonFeatures))
+                    })
+                }
+                if (!style.styleSourceExists("hazard-point-source")) {
+                    style.addSource(geoJsonSource("hazard-point-source") {
+                        featureCollection(FeatureCollection.fromFeatures(pointFeatures))
+                    })
+                }
 
                 // Fill polygon for radius
-                if (!style.styleLayerExists("hazard-radius-layer"))
-                style.addLayer(
-                    com.mapbox.maps.extension.style.layers.generated.fillLayer("hazard-radius-layer", "hazard-polygon-source") {
-                        fillColor("#FF0000")
-                        fillOpacity(0.2)
-                    }
-                )
+                if (!style.styleLayerExists("hazard-radius-layer")) {
+                    style.addLayer(
+                        fillLayer(
+                            "hazard-radius-layer",
+                            "hazard-polygon-source"
+                        ) {
+                            fillColor("#FF0000")
+                            fillOpacity(0.2)
+                        }
+                    )
+                }
 
                 // Add hazard icon as bitmap
                 val bitmap = getBitmapFromVectorDrawable(R.drawable.warning_24px)
@@ -380,28 +405,30 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
 
                 // Symbol for icon
-                if (!style.styleLayerExists("hazard-symbol-layer"))
-                style.addLayer(
-                    symbolLayer("hazard-symbol-layer", "hazard-point-source") {
-                        iconImage("hazard-icon")
-                        iconSize(1.0)
-                        iconAllowOverlap(true)
-                        iconIgnorePlacement(true)
-                    }
-                )
+                if (!style.styleLayerExists("hazard-symbol-layer")) {
+                    style.addLayer(
+                        symbolLayer("hazard-symbol-layer", "hazard-point-source") {
+                            iconImage("hazard-icon")
+                            iconSize(1.0)
+                            iconAllowOverlap(true)
+                            iconIgnorePlacement(true)
+                        }
+                    )
+                }
 
                 // Label above icon
-                if (!style.styleLayerExists("hazard-label-layer"))
-                style.addLayer(
-                    symbolLayer("hazard-label-layer", "hazard-point-source") {
-                        textField(Expression.get("hazard"))
-                        textSize(12.0)
-                        textColor("#000000")
-                        textHaloColor("#FFFFFF")
-                        textHaloWidth(1.2)
-                        textOffset(listOf(0.0, 2.0))
-                    }
-                )
+                if (!style.styleLayerExists("hazard-label-layer")) {
+                    style.addLayer(
+                        symbolLayer("hazard-label-layer", "hazard-point-source") {
+                            textField(Expression.Companion.get("hazard"))
+                            textSize(12.0)
+                            textColor("#000000")
+                            textHaloColor("#FFFFFF")
+                            textHaloWidth(1.2)
+                            textOffset(listOf(0.0, 2.0))
+                        }
+                    )
+                }
             }
         }
     }
@@ -470,7 +497,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun loadForecast() {
-        clearMap()
+        predictionProgressIndicator.visibility = View.VISIBLE
         currentLat?.let { lat ->
             currentLon?.let { lon ->
                 try {
@@ -489,6 +516,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                     predictAirQuality(modelCity, normalizedState, lat, lon)
                 } catch (_: Exception) {
                     Log.d("Weather", "Failed to load forecast")
+                    predictionProgressIndicator.visibility = View.GONE
                 }
             }
         }
@@ -578,6 +606,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun initViews(view: View) {
+        aqiCardView = view.findViewById(R.id.aqiCardView)
         tvAqi = view.findViewById(R.id.tvAqi)
         tvCity = view.findViewById(R.id.tvCity)
         tvAqiStatus = view.findViewById(R.id.tvAqiStatus)
@@ -589,6 +618,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         predictedRecycler = view.findViewById(R.id.hrvPredictedAqi)
         predictedRecycler.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        predictionProgressIndicator = view.findViewById(R.id.predictionProgressIndicator)
         btnSafeRoutes = view.findViewById(R.id.btnSafeRoutes)
         hazardDetector = view.findViewById(R.id.hazard)
         loadingIndicator = view.findViewById(R.id.loadingIndicator)
@@ -640,7 +670,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun setupMap() {
         mapView.location.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener)
-        mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
+        mapView.mapboxMap.loadStyle(Style.Companion.MAPBOX_STREETS) { style ->
             currentLat?.let { lat ->
                 currentLon?.let { lon ->
                     mapView.mapboxMap.setCamera(
@@ -804,6 +834,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 }
 
                 override fun onFailure(call: Call<PredictResponse>, t: Throwable) {
+                    predictionProgressIndicator.visibility = View.GONE
                     Log.d("PredictAirQuality", "Error: ${t.message}")
                 }
             })
@@ -847,8 +878,12 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 withContext(Dispatchers.Main) {
                     predictedAdapter = PredictedAqiAdapter(hourlyPredictions)
                     predictedRecycler.adapter = predictedAdapter
+                    predictionProgressIndicator.visibility = View.GONE
                 }
             } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    predictionProgressIndicator.visibility = View.GONE
+                }
                 Log.e("Forecast", "Error handling prediction success", e)
             }
         }
@@ -856,11 +891,13 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun handleUnsupportedLocation(response: PredictResponse?) {
         val message = response?.message ?: "Location not supported"
+        predictionProgressIndicator.visibility = View.GONE
         val supportedCities = response?.supportedCities?.joinToString(", ") ?: ""
         showToast("$message. Supported cities: $supportedCities")
     }
 
     private fun handlePredictionError(error: String?) {
+        predictionProgressIndicator.visibility = View.GONE
         showToast("Prediction failed: ${error ?: "Unknown error"}")
     }
 
@@ -904,23 +941,30 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 model.close()
 
                 withContext(Dispatchers.Main) {
-                    val textInputView = View.inflate(this@CitizenHomeFragment.requireContext(), R.layout.dialouge_text_input, null)
+                    val textInputView = View.inflate(
+                        this@CitizenHomeFragment.requireContext(),
+                        R.layout.dialouge_text_input,
+                        null
+                    )
                     val input = textInputView.findViewById<TextInputEditText>(R.id.textInput)
                     input.hint = "Enter hazard Radius in km"
 
-                    val dialog = MaterialAlertDialogBuilder(this@CitizenHomeFragment.requireContext())
-                        .setTitle("It has detected a ${labels.getOrElse(predictedIndex) { "Unknown" }} hazard. Enter its radius of catastrophe.")
-                        .setView(textInputView)
-                        .setPositiveButton("Proceed", null)
-                        .setNegativeButton("Cancel", null)
-                        .create()
+                    val dialog =
+                        MaterialAlertDialogBuilder(this@CitizenHomeFragment.requireContext())
+                            .setTitle("It has detected a ${labels.getOrElse(predictedIndex) { "Unknown" }} hazard. Enter its radius of catastrophe.")
+                            .setView(textInputView)
+                            .setPositiveButton("Proceed", null)
+                            .setNegativeButton("Cancel", null)
+                            .create()
 
                     dialog.show()
 
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                         val radius = input.text.toString().trim()
                         if (radius.isNotBlank()) {
-                            registerHazard(radius.toDouble(), labels.getOrElse(predictedIndex) { "Unknown" })
+                            registerHazard(
+                                radius.toDouble(),
+                                labels.getOrElse(predictedIndex) { "Unknown" })
                             dialog.dismiss()
                         } else {
                             input.error = "Enter a valid radius"
@@ -1023,10 +1067,10 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         val earthRadius = 6371.0 // km
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
-        val a = kSin(dLat / 2).kPow(2) +
-                kCos(Math.toRadians(lat1)) * kCos(Math.toRadians(lat2)) *
-                kSin(dLon / 2).kPow(2)
-        val distance = earthRadius * 2 * kAtan2(kSqrt(a), kSqrt(1 - a))
+        val a = sin(dLat / 2).pow(2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2).pow(2)
+        val distance = earthRadius * 2 * atan2(sqrt(a), sqrt(1 - a))
         return distance
     }
 

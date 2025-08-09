@@ -1,5 +1,4 @@
-
-package com.hazardiqplus.ui.citizen.fragments.home
+package com.hazardiqplus.ui.citizen
 
 import android.os.Bundle
 import android.util.Log
@@ -18,8 +17,9 @@ import com.hazardiqplus.data.ChatMessage
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
+import org.json.JSONArray
 import org.json.JSONObject
-import java.util.*
+import java.util.ArrayList
 
 class HazardChatActivity : AppCompatActivity() {
 
@@ -113,7 +113,7 @@ class HazardChatActivity : AppCompatActivity() {
 
     private val onChatHistory = Emitter.Listener { args ->
         if (args.isNotEmpty()) {
-            val data = args[0] as org.json.JSONArray
+            val data = args[0] as JSONArray
 
             runOnUiThread {
                 messages.clear()
@@ -124,7 +124,12 @@ class HazardChatActivity : AppCompatActivity() {
                     val senderName = item.getString("senderName")
                     val timestamp = item.getLong("timestamp")
 
-                    val chatMessage = ChatMessage(message = message, sender = senderUid, senderName = senderName, timestamp = timestamp)
+                    val chatMessage = ChatMessage(
+                        message = message,
+                        sender = senderUid,
+                        senderName = senderName,
+                        timestamp = timestamp
+                    )
                     chatMessage.isMine = senderUid == currentUserId
                     messages.add(chatMessage)
                 }
@@ -169,7 +174,12 @@ class HazardChatActivity : AppCompatActivity() {
             val senderName = data.getString("senderName")
             val timestamp = data.getLong("timestamp")
 
-            val chatMessage = ChatMessage(message = message, sender = senderUid, senderName = senderName, timestamp = timestamp)
+            val chatMessage = ChatMessage(
+                message = message,
+                sender = senderUid,
+                senderName = senderName,
+                timestamp = timestamp
+            )
             chatMessage.isMine = senderUid == currentUserId
             runOnUiThread {
                 messages.add(chatMessage)
