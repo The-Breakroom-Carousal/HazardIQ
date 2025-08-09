@@ -1,4 +1,4 @@
-package com.hazardiqplus.ui.citizen
+package com.hazardiqplus.ui
 
 import android.os.Bundle
 import android.util.Log
@@ -19,11 +19,11 @@ import io.socket.client.Socket
 import io.socket.emitter.Emitter
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.ArrayList
+import kotlin.properties.Delegates
 
-class HazardChatActivity : AppCompatActivity() {
+class SosChatActivity : AppCompatActivity() {
 
-    private lateinit var hazardTitle: TextView
+    private lateinit var sosTitle: TextView
     private lateinit var chatRecyclerView: RecyclerView
     private lateinit var messageInput: EditText
     private lateinit var sendButton: Button
@@ -31,7 +31,7 @@ class HazardChatActivity : AppCompatActivity() {
 
     private val messages = ArrayList<ChatMessage>()
     private var socket: Socket? = null
-    private lateinit var hazardId: String
+    private var sosId by Delegates.notNull<Int>()
     private lateinit var firebaseAuth: FirebaseAuth
     private var currentUserId: String? = null
 
@@ -39,41 +39,32 @@ class HazardChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_hazard_chat)
 
-
         firebaseAuth = Firebase.auth
         currentUserId = firebaseAuth.currentUser?.uid
 
-
-        hazardTitle = findViewById(R.id.hazardTitle)
+        sosTitle = findViewById(R.id.hazardTitle)
         chatRecyclerView = findViewById(R.id.chatRecyclerView)
         messageInput = findViewById(R.id.messageInput)
         sendButton = findViewById(R.id.sendButton)
 
-        // Get intent extras
-        val hazardType = intent.getStringExtra("hazard_type") ?: "Hazard"
-        val hazardIdLong = intent.getStringExtra("hazard_id")?.toLong() ?: -1
-
-        if (hazardIdLong == -1L) {
-            Log.e("HazardChat", "Missing or invalid hazard_id in intent")
+        val receivedSosId = intent.getStringExtra("sosId")
+        if (receivedSosId == null) {
+            Log.e("SosChat", "❌ Missing sos_id in intent")
             finish()
             return
         }
+        sosId = receivedSosId.toInt()
 
-        hazardId = hazardIdLong.toString()
-        hazardTitle.text = "$hazardType | ID: $hazardId"
+        sosTitle.text = "🚨 SOS Chat | ID: $sosId"
 
-        // Setup RecyclerView
         adapter = ChatMessageAdapter(messages)
         chatRecyclerView.layoutManager = LinearLayoutManager(this)
         chatRecyclerView.adapter = adapter
 
-        // **Connect to socket only after Firebase user is confirmed to be logged in**
         if (currentUserId != null) {
             connectSocket()
         } else {
-            // Handle case where user is not logged in, maybe redirect to login or show an error
-            Log.e("HazardChat", "User not logged in.")
-            // You could show a toast or a different UI here
+            Log.e("SosChat", "User not logged in.")
         }
 
         sendButton.setOnClickListener {
@@ -90,11 +81,10 @@ class HazardChatActivity : AppCompatActivity() {
 
             socket?.on(Socket.EVENT_CONNECT) {
                 Log.d("SOCKET", "✅ Connected to socket")
-                joinHazardRoom()
+                joinSosRoom()
             }
 
-            // Add listeners for other events here
-            socket?.on("joinedRoom") { Log.d("SOCKET", "✅ Joined hazard room") }
+            socket?.on("joinedRoom") { Log.d("SOCKET", "✅ Joined SOS room") }
             socket?.on("chatHistory", onChatHistory)
             socket?.on("authError") { args ->
                 runOnUiThread {
@@ -114,7 +104,6 @@ class HazardChatActivity : AppCompatActivity() {
     private val onChatHistory = Emitter.Listener { args ->
         if (args.isNotEmpty()) {
             val data = args[0] as JSONArray
-
             runOnUiThread {
                 messages.clear()
                 for (i in 0 until data.length()) {
@@ -139,13 +128,13 @@ class HazardChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun joinHazardRoom() {
+    private fun joinSosRoom() {
         firebaseAuth.currentUser?.getIdToken(true)?.addOnSuccessListener { result ->
             val token = result.token
             val joinData = JSONObject()
-            joinData.put("hazardId", hazardId)
+            joinData.put("sosId", sosId)
             joinData.put("firebaseToken", token)
-            socket?.emit("joinHazardRoom", joinData)
+            socket?.emit("joinSosRoom", joinData)
         }?.addOnFailureListener {
             Log.e("SOCKET", "❌ Failed to get token: ${it.message}")
         }
@@ -155,10 +144,10 @@ class HazardChatActivity : AppCompatActivity() {
         firebaseAuth.currentUser?.getIdToken(true)?.addOnSuccessListener { result ->
             val token = result.token
             val data = JSONObject()
-            data.put("hazardId", hazardId)
+            data.put("sosId", sosId)
             data.put("firebaseToken", token)
             data.put("message", messageText)
-            socket?.emit("sendMessage", data)
+            socket?.emit("sendSosMessage", data)
             Log.d("SOCKET", "📤 Sent message: $messageText")
             messageInput.text.clear()
         }?.addOnFailureListener {

@@ -9,12 +9,12 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.hazardiqplus.R
 import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.ui.responder.ReactSosActitvity
+import com.hazardiqplus.ui.SosChatActivity
 
 class SosRequestAdapter(
     private val listener: SosActionListener,
@@ -84,9 +84,9 @@ class SosRequestAdapter(
 
         holder.btnAccept.setOnClickListener {
             if (event.progress == "acknowledged") {
-                /*val intent = Intent(context, ChatActivity::class.java)
+                val intent = Intent(context, SosChatActivity::class.java)
                 intent.putExtra("sosId", event.id.toString())
-                context.startActivity(intent)*/
+                context.startActivity(intent)
             } else {
                 listener.onAccept(event)
             }

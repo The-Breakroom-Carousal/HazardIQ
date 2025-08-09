@@ -24,6 +24,9 @@
         android:theme="@style/Theme.HazardIQ"
         tools:targetApi="31">
         <activity
+            android:name=".ui.SosChatActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.citizen.HazardChatActivity"
             android:exported="false" />
         <activity
@@ -54,7 +57,7 @@
             android:exported="false" />
         <activity
             android:name=".ui.LoginSignupActivity"
-            android:exported="false"></activity>
+            android:exported="false" />
         <activity
             android:name=".ui.MainActivity"
             android:exported="false" />

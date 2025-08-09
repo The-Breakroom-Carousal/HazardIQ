@@ -14,6 +14,7 @@ import com.hazardiqplus.R
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.SosEvent
 import com.hazardiqplus.data.UserName
+import com.hazardiqplus.ui.SosChatActivity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -83,9 +84,9 @@ class MySosAdapter(
             listener.onMarkAsResolved(event)
         }
         holder.btnChat.setOnClickListener {
-            /*val intent = Intent(context, ChatActivity::class.java)
+            val intent = Intent(context, SosChatActivity::class.java)
             intent.putExtra("sosId", event.id.toString())
-            context?.startActivity(intent)*/
+            context.startActivity(intent)
         }
     }
 
