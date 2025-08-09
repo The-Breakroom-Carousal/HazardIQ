@@ -116,11 +116,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private lateinit var loadingIndicator: LoadingIndicator
     private lateinit var mapView: MapView
     private lateinit var btnFullScreenMap: ImageView
-    private lateinit var btnSafeRoutes: Button
-    private lateinit var hazardDetector: Button
-    private lateinit var cameraLauncher: ActivityResultLauncher<Uri>
-    private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
-    private var imageUri: Uri? = null
     private var currentLat: Double? = null
     private var currentLon: Double? = null
     data class AQIData(val pm25: Double, val pm10: Double)
@@ -131,11 +126,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         val weatherCondition: String,
         val windSpeed: Double,
         val humidity: Double
-    )
-    private val labels = listOf(
-        "Water_Disaster", "Non_Damaged_Wildlife_Forest", "Non_Damaged_sea",
-        "Non_Damaged_Buildings_Street", "Non_Damaged_human", "Damaged_Infrastructure",
-        "Earthquake", "Human_Damage", "Urban_Fire", "Wild_Fire", "Land_Slide", "Drought"
     )
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -171,8 +161,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         val view = inflater.inflate(R.layout.fragment_citizen_home, container, false)
         initViews(view)
         aqiCardView.setBackgroundResource(R.drawable.bg_aqi_good)
-        setupCameraLauncher()
-        setupPermissions()
         getUserLocation()
         setupMap()
         checkAndScheduleAqiReport()
@@ -619,8 +607,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         predictedRecycler.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         predictionProgressIndicator = view.findViewById(R.id.predictionProgressIndicator)
-        btnSafeRoutes = view.findViewById(R.id.btnSafeRoutes)
-        hazardDetector = view.findViewById(R.id.hazard)
         loadingIndicator = view.findViewById(R.id.loadingIndicator)
 
         tvCurrentTime.text = SimpleDateFormat("EEEE, hh:mm a", Locale.getDefault()).format(Date())
@@ -629,42 +615,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                 .replace(R.id.coordinatorLayout, FullScreenMapFragment())
                 .addToBackStack(null)
                 .commit()
-        }
-        btnSafeRoutes.setOnClickListener {
-            showToast("Safe Routes functionality coming soon")
-        }
-        hazardDetector.setOnClickListener {
-            checkCameraPermission()
-        }
-    }
-
-    private fun setupCameraLauncher() {
-        cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            if (success && imageUri != null) {
-                lifecycleScope.launch {
-                    try {
-                        val bitmap = MediaStore.Images.Media.getBitmap(
-                            requireContext().contentResolver,
-                            imageUri
-                        )
-                        runModel(bitmap)
-                    } catch (e: Exception) {
-                        showToast("Failed to process image: ${e.message}")
-                    }
-                }
-            }
-        }
-    }
-
-    private fun setupPermissions() {
-        permissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            if (permissions.all { it.value }) {
-                openCamera()
-            } else {
-                showToast("Camera permission required for hazard detection")
-            }
         }
     }
 
@@ -761,31 +711,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun requestLocationPermission() {
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-    }
-
-    private fun checkCameraPermission() {
-        when {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                openCamera()
-            }
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                requireActivity(),
-                Manifest.permission.CAMERA
-            ) -> {
-                showToast("Camera permission is needed for hazard detection")
-                requestCameraPermission()
-            }
-            else -> {
-                requestCameraPermission()
-            }
-        }
-    }
-
-    private fun requestCameraPermission() {
-        permissionLauncher.launch(arrayOf(Manifest.permission.CAMERA))
     }
 
     @SuppressLint("SetTextI18n")
@@ -899,130 +824,6 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private fun handlePredictionError(error: String?) {
         predictionProgressIndicator.visibility = View.GONE
         showToast("Prediction failed: ${error ?: "Unknown error"}")
-    }
-
-    private fun runModel(bitmap: Bitmap) {
-        lifecycleScope.launch(Dispatchers.Default) {
-            try {
-                val model = BestModel.newInstance(requireContext())
-                val resized = bitmap.scale(224, 224)
-                val floatValues = FloatArray(224 * 224 * 3)
-                val intValues = IntArray(224 * 224)
-                resized.getPixels(intValues, 0, 224, 0, 0, 224, 224)
-                for (i in intValues.indices) {
-                    val pixel = intValues[i]
-                    floatValues[i * 3 + 0] = ((pixel shr 16 and 0xFF) / 255.0f) // R
-                    floatValues[i * 3 + 1] = ((pixel shr 8 and 0xFF) / 255.0f)  // G
-                    floatValues[i * 3 + 2] = ((pixel and 0xFF) / 255.0f)        // B
-                }
-                val mean = floatArrayOf(0.485f, 0.456f, 0.406f)
-                val std = floatArrayOf(0.229f, 0.224f, 0.225f)
-
-                val chw = FloatArray(1 * 3 * 224 * 224)
-                var idx = 0
-                for (c in 0 until 3) {
-                    for (y in 0 until 224) {
-                        for (x in 0 until 224) {
-                            val pixel = resized[x, y]
-                            val value = when (c) {
-                                0 -> (Color.red(pixel) / 255.0f - mean[0]) / std[0]
-                                1 -> (Color.green(pixel) / 255.0f - mean[1]) / std[1]
-                                else -> (Color.blue(pixel) / 255.0f - mean[2]) / std[2]
-                            }
-                            chw[idx++] = value
-                        }
-                    }
-                }
-                val inputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 3, 224, 224), DataType.FLOAT32)
-                inputBuffer.loadArray(chw)
-                val outputs = model.process(inputBuffer)
-                val result = outputs.outputFeature0AsTensorBuffer.floatArray
-                val predictedIndex = result.indices.maxByOrNull { result[it] } ?: -1
-                model.close()
-
-                withContext(Dispatchers.Main) {
-                    val textInputView = View.inflate(
-                        this@CitizenHomeFragment.requireContext(),
-                        R.layout.dialouge_text_input,
-                        null
-                    )
-                    val input = textInputView.findViewById<TextInputEditText>(R.id.textInput)
-                    input.hint = "Enter hazard Radius in km"
-
-                    val dialog =
-                        MaterialAlertDialogBuilder(this@CitizenHomeFragment.requireContext())
-                            .setTitle("It has detected a ${labels.getOrElse(predictedIndex) { "Unknown" }} hazard. Enter its radius of catastrophe.")
-                            .setView(textInputView)
-                            .setPositiveButton("Proceed", null)
-                            .setNegativeButton("Cancel", null)
-                            .create()
-
-                    dialog.show()
-
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                        val radius = input.text.toString().trim()
-                        if (radius.isNotBlank()) {
-                            registerHazard(
-                                radius.toDouble(),
-                                labels.getOrElse(predictedIndex) { "Unknown" })
-                            dialog.dismiss()
-                        } else {
-                            input.error = "Enter a valid radius"
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    showToast("Error: ${e.message}")
-                }
-            }
-        }
-    }
-
-    private fun registerHazard(radius: Double, hazard: String) {
-        val request = SaveHazardRequest(radius, currentLat!!, currentLon!!, hazard)
-
-        RetrofitClient.instance.registerHazard(request)
-            .enqueue(object : Callback<SaveHazardResponse> {
-                override fun onResponse(
-                    call: Call<SaveHazardResponse>,
-                    response: Response<SaveHazardResponse>
-                ) {
-                    if (response.isSuccessful && response.body()?.success == true) {
-                        Snackbar.make(requireView(), "Hazard registered successfully.", Snackbar.LENGTH_SHORT).show()
-                    }
-                }
-
-                override fun onFailure(
-                    call: Call<SaveHazardResponse?>,
-                    t: Throwable
-                ) {
-                    Log.e("Hazard", "Failed to register hazard", t)
-                    Snackbar.make(requireView(), "Failed to register hazard. Please try again!", Snackbar.LENGTH_SHORT).show()
-                }
-            })
-    }
-
-    private fun openCamera() {
-        try {
-            val photoFile = createTempImageFile()
-            imageUri = FileProvider.getUriForFile(
-                requireContext(),
-                "${requireContext().packageName}.provider",
-                photoFile
-            )
-            imageUri?.let { cameraLauncher.launch(it) }
-        } catch (e: Exception) {
-            showToast("Failed to open camera: ${e.message}")
-        }
-    }
-
-    private fun createTempImageFile(): File {
-        return File.createTempFile(
-            "camera_img_${System.currentTimeMillis()}",
-            ".jpg",
-            requireContext().cacheDir
-        ).apply { deleteOnExit() }
     }
 
     private fun getUserLocation() {

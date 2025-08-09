@@ -1,9 +1,8 @@
-package com.hazardiqplus.ui.responder
+package com.hazardiqplus.ui.responder.fragments
 
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Geocoder
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -166,7 +165,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                                 }
                             }
 
-                            override fun onFailure(call: Call<com.hazardiqplus.data.UpdateProgressResponse>, t: Throwable) {
+                            override fun onFailure(call: Call<UpdateProgressResponse>, t: Throwable) {
                                 Toast.makeText(requireContext(), "Network Error", Toast.LENGTH_SHORT).show()
                             }
                         })

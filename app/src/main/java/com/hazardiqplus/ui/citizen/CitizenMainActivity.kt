@@ -12,6 +12,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.hazardiqplus.R
 import com.hazardiqplus.ui.citizen.fragments.CitizenSosFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
+import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
 
 class CitizenMainActivity : AppCompatActivity() {
 
@@ -46,6 +47,12 @@ class CitizenMainActivity : AppCompatActivity() {
                 R.id.nav_sos -> {
                     supportFragmentManager.beginTransaction()
                         .replace(R.id.fragmentContainer, CitizenSosFragment())
+                        .commit()
+                    true
+                }
+                R.id.nav_report -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragmentContainer, CitizenReportsFragment())
                         .commit()
                     true
                 }
