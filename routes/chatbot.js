@@ -30,7 +30,7 @@ router.put('/ai-chat', async (req, res) => {
       [uid, "user", msg]
     );
     
-    const response = await axios.post('https://xyz.com', { uid });
+    const response = await axios.post('https://hazard-iq-plus-rag.onrender.com/query', { uid });
 
     res.status(200).json(response.data);
 
