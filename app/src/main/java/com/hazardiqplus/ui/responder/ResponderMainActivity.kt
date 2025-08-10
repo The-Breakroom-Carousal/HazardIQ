@@ -1,5 +1,6 @@
 package com.hazardiqplus.ui.responder
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
@@ -9,6 +10,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.ktx.messaging
@@ -16,6 +19,7 @@ import com.hazardiqplus.R
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.UserResponse
+import com.hazardiqplus.ui.ProfileActivity
 import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenSosFragment
@@ -30,6 +34,8 @@ import retrofit2.Response
 class ResponderMainActivity : AppCompatActivity() {
 
     private lateinit var responderBottomNav: BottomNavigationView
+    private lateinit var extendedFabRChatbot: ExtendedFloatingActionButton
+    private lateinit var extendedFabRProfile: ExtendedFloatingActionButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +52,8 @@ class ResponderMainActivity : AppCompatActivity() {
             insets
         }
 
+        extendedFabRChatbot = findViewById(R.id.extendedFabRChatbot)
+        extendedFabRProfile = findViewById(R.id.extendedFabRProfile)
         responderBottomNav = findViewById(R.id.responderBottomNav)
 
         if (savedInstanceState == null) {
@@ -68,8 +76,22 @@ class ResponderMainActivity : AppCompatActivity() {
                         .commit()
                     true
                 }
+                R.id.nav_rReport -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.responderFragmentContainer, CitizenReportsFragment())
+                        .commit()
+                    true
+                }
                 else -> false
             }
+        }
+
+        extendedFabRChatbot.setOnClickListener {
+            // Handle chatbot button click
+        }
+        extendedFabRProfile.setOnClickListener {
+            val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
         }
 
         // Launch a single coroutine to handle token logic

@@ -51,7 +51,6 @@ import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.snackbar.Snackbar
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FindHazardResponse
-import com.hazardiqplus.ui.MainActivity
 import com.hazardiqplus.ui.citizen.HazardChatActivity
 import com.mapbox.geojson.Polygon
 import com.mapbox.maps.RenderedQueryGeometry

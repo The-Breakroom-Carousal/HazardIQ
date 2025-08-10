@@ -19,7 +19,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth
 import com.hazardiqplus.R
 import com.hazardiqplus.clients.OpenMeteoClient
-import com.hazardiqplus.ui.MainActivity
+import com.hazardiqplus.ui.LoginSignupActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -125,7 +125,7 @@ class WeatherReportGenerator (
             "AQI $aqi ($quality). Air quality is okay today."
         }
 
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+        val intent = Intent(applicationContext, LoginSignupActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = PendingIntent.getActivity(

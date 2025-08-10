@@ -1,5 +1,6 @@
 package com.hazardiqplus.ui.citizen
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import androidx.activity.enableEdgeToEdge
@@ -10,6 +11,7 @@ import androidx.fragment.app.commit
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.hazardiqplus.R
+import com.hazardiqplus.ui.ProfileActivity
 import com.hazardiqplus.ui.citizen.fragments.CitizenSosFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
@@ -18,6 +20,8 @@ import com.hazardiqplus.ui.citizen.fragments.CitizenWeatherFragment
 class CitizenMainActivity : AppCompatActivity() {
 
     private lateinit var bottomNavigation: BottomNavigationView
+    private lateinit var extendedFabChatbot: Button
+    private lateinit var extendedFabProfile: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +34,8 @@ class CitizenMainActivity : AppCompatActivity() {
         }
 
         bottomNavigation = findViewById(R.id.bottomNavigation)
+        extendedFabChatbot = findViewById(R.id.extendedFabChatbot)
+        extendedFabProfile = findViewById(R.id.extendedFabProfile)
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
@@ -65,6 +71,14 @@ class CitizenMainActivity : AppCompatActivity() {
                 }
                 else -> false
             }
+        }
+
+        extendedFabChatbot.setOnClickListener {
+            // Handle chatbot button click
+        }
+        extendedFabProfile.setOnClickListener {
+            val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
         }
     }
 }
