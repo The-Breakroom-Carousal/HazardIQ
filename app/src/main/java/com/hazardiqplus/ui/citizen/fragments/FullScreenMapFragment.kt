@@ -462,11 +462,16 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
     }
 
     private fun getBitmapFromVectorDrawable(drawableId: Int): Bitmap? {
-        val drawable = ContextCompat.getDrawable(requireContext(), drawableId) ?: return null
-        val bitmap = createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight)
-        val canvas = Canvas(bitmap)
-        drawable.setBounds(0, 0, canvas.width, canvas.height)
-        drawable.draw(canvas)
-        return bitmap
+        try {
+            val drawable = ContextCompat.getDrawable(requireContext(), drawableId) ?: return null
+            val bitmap = createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight)
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            return bitmap
+        } catch (e: Exception) {
+            Log.e("Map", "Failed to get bitmap from vector drawable", e)
+            return null
+        }
     }
 }

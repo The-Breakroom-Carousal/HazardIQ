@@ -8,6 +8,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.ktx.messaging
@@ -15,6 +16,10 @@ import com.hazardiqplus.R
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.UserResponse
+import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
+import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
+import com.hazardiqplus.ui.citizen.fragments.CitizenSosFragment
+import com.hazardiqplus.ui.citizen.fragments.FullScreenMapFragment
 import com.hazardiqplus.ui.responder.fragments.ResponderHomeFragment
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -24,19 +29,46 @@ import retrofit2.Response
 
 class ResponderMainActivity : AppCompatActivity() {
 
+    private lateinit var responderBottomNav: BottomNavigationView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_responder_main)
         enableEdgeToEdge()
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.responderFragmentContainer)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.responderBottomNav)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+            insets
+        }
+
+        responderBottomNav = findViewById(R.id.responderBottomNav)
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
                 replace(R.id.responderFragmentContainer, ResponderHomeFragment())
+            }
+        }
+
+        responderBottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_rhome -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.responderFragmentContainer, ResponderHomeFragment())
+                        .commit()
+                    true
+                }
+                R.id.nav_map -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.responderFragmentContainer, FullScreenMapFragment())
+                        .commit()
+                    true
+                }
+                else -> false
             }
         }
 

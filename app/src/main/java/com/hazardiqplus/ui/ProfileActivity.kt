@@ -20,7 +20,6 @@ import java.util.*
 class ProfileActivity : AppCompatActivity() {
 
     private lateinit var firebaseAuth: FirebaseAuth
-    private lateinit var profileImage: ImageView
     private lateinit var profileName: TextView
     private lateinit var profileRole: TextView
     private lateinit var profileEmail: TextView
@@ -33,7 +32,6 @@ class ProfileActivity : AppCompatActivity() {
 
         firebaseAuth = FirebaseAuth.getInstance()
 
-        profileImage = findViewById(R.id.profile_image)
         profileName = findViewById(R.id.profile_name)
         profileRole = findViewById(R.id.profile_role)
         profileEmail = findViewById(R.id.profile_email)

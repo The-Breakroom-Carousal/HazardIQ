@@ -1,6 +1,7 @@
 package com.hazardiqplus.ui.responder.fragments
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.tabs.TabLayout
 import com.google.firebase.auth.FirebaseAuth
 import com.hazardiqplus.R
@@ -40,12 +42,15 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
     private lateinit var tabLayout: TabLayout
     private lateinit var recyclerRequests: RecyclerView
     private lateinit var tvLocation: TextView
+    private lateinit var progressCircular: CircularProgressIndicator
     private val allRequests = mutableListOf<SosEvent>()
     private val pendingRequests = mutableListOf<SosEvent>()
     private val declinedRequests = mutableListOf<SosEvent>()
     private val acceptedRequests = mutableListOf<SosEvent>()
+    private lateinit var tvNoList: TextView
     private var currentLocation: String = "Unknown"
     private var fetchJob: Job? = null
+    private var firstLoad = true
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -57,15 +62,20 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
         recyclerRequests = view.findViewById(R.id.recyclerRequests)
         tvLocation = view.findViewById(R.id.tvLocation)
         tvLocation.text = currentLocation
+        progressCircular = view.findViewById(R.id.progressCircular)
+        tvNoList = view.findViewById(R.id.tvNoList)
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        tabLayout.addTab(tabLayout.newTab().setText("Pending"))
-        tabLayout.addTab(tabLayout.newTab().setText("Accepted"))
-        tabLayout.addTab(tabLayout.newTab().setText("All Requests"))
+        tabLayout.addTab(tabLayout.newTab().setText("Pending")
+            .setIcon(R.drawable.round_access_time_24))
+        tabLayout.addTab(tabLayout.newTab().setText("Accepted")
+            .setIcon(R.drawable.round_task_alt_24))
+        tabLayout.addTab(tabLayout.newTab().setText("All Requests")
+            .setIcon(R.drawable.round_format_list_bulleted_24))
 
         recyclerRequests.layoutManager = LinearLayoutManager(requireContext())
         adapter = SosRequestAdapter(this@ResponderHomeFragment, requireContext())
@@ -106,10 +116,12 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
             2 -> allRequests
             else -> allRequests
         }
+        checkLists(dataToShow)
         adapter.updateData(dataToShow)
     }
 
     private fun fetchSosRequests(city: String) {
+        if (firstLoad) progressCircular.visibility = View.VISIBLE
         RetrofitClient.instance.getSosEvents(city)
             .enqueue(object : Callback<List<SosEvent>> {
                 override fun onResponse(
@@ -129,13 +141,28 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                         acceptedRequests.clear()
                         acceptedRequests.addAll(responseData.filter { it.progress == "acknowledged" && it.responder_uid == uid })
 
+                        tabLayout.getTabAt(0)?.text = "Pending (${pendingRequests.size})"
+                        tabLayout.getTabAt(1)?.text = "Accepted (${acceptedRequests.size})"
+                        tabLayout.getTabAt(2)?.text = "All Requests (${allRequests.size})"
+
+                        progressCircular.animate()
+                            .alpha(0f)
+                            .setDuration(500)
+                            .withEndAction {
+                                progressCircular.visibility = View.GONE
+                            }
+                            .start()
+                        firstLoad = false
+
                         updateRecyclerForTab(tabLayout.selectedTabPosition)
                     } else {
+                        progressCircular.visibility = View.GONE
                         Toast.makeText(requireContext(), "Failed to fetch requests", Toast.LENGTH_SHORT).show()
                     }
                 }
 
                 override fun onFailure(call: Call<List<SosEvent>>, t: Throwable) {
+                    progressCircular.visibility = View.GONE
                     Toast.makeText(requireContext(), "Network Error", Toast.LENGTH_SHORT).show()
                 }
             })
@@ -228,12 +255,17 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
             .lastLocation
             .addOnSuccessListener { location ->
                 if (location != null) {
-                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
-                    val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
-                    val city = address?.locality ?: "Unknown"
-                    currentLocation = city
-                    tvLocation.text = city
-                    fetchSosRequests(city)
+                    try {
+                        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                        val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
+                        val city = address?.locality ?: "Unknown"
+                        currentLocation = city
+                        tvLocation.text = city
+                        fetchSosRequests(city)
+                    } catch (e: Exception) {
+                        Log.e("Location", "Failed to get city name", e)
+                        Toast.makeText(requireContext(), "Failed to get city name", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
                     Toast.makeText(requireContext(), "Failed to get location", Toast.LENGTH_SHORT).show()
                 }
@@ -242,5 +274,15 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                 Log.e("Location", "Failed to get location", e)
                 Toast.makeText(requireContext(), "Failed to get location", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    @SuppressLint("SetTextI18n")
+    fun checkLists(typeOfList: MutableList<SosEvent>) {
+        if (typeOfList.isEmpty()) {
+            tvNoList.text = "No such requests found"
+            tvNoList.visibility = View.VISIBLE
+        } else {
+            tvNoList.visibility = View.GONE
+        }
     }
 }
