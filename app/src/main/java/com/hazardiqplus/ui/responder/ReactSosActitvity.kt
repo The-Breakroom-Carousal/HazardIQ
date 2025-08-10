@@ -97,7 +97,6 @@ class ReactSosActitvity : AppCompatActivity() {
             val street = address.thoroughfare ?: "Unknown Street"
             val locality = address.locality ?: "Unknown Locality"
             val subLocality = address.subLocality ?: "Unknown Area"
-            val city = address.adminArea ?: "Unknown City"
 
             val sb = StringBuilder()
             if (street != "Unknown Street") {
