@@ -25,7 +25,7 @@ async function verifyIdTokenFromHeader(req) {
 }
 
 router.put('/ai-chat', async (req, res) => {
-  const { idToken, msg } = req.body;
+  
   try {
     
     const uid = await verifyIdTokenFromHeader(req);
