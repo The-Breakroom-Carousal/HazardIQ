@@ -23,6 +23,7 @@ import com.hazardiqplus.ui.ProfileActivity
 import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenSosFragment
+import com.hazardiqplus.ui.citizen.fragments.CitizenWeatherFragment
 import com.hazardiqplus.ui.citizen.fragments.FullScreenMapFragment
 import com.hazardiqplus.ui.responder.fragments.ResponderHomeFragment
 import kotlinx.coroutines.launch
@@ -73,6 +74,12 @@ class ResponderMainActivity : AppCompatActivity() {
                 R.id.nav_map -> {
                     supportFragmentManager.beginTransaction()
                         .replace(R.id.responderFragmentContainer, FullScreenMapFragment())
+                        .commit()
+                    true
+                }
+                R.id.nav_rweather -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.responderFragmentContainer, CitizenWeatherFragment())
                         .commit()
                     true
                 }

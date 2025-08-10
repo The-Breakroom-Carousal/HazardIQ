@@ -264,7 +264,11 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                         fetchSosRequests(city)
                     } catch (e: Exception) {
                         Log.e("Location", "Failed to get city name", e)
-                        Toast.makeText(requireContext(), "Failed to get city name", Toast.LENGTH_SHORT).show()
+                        try {
+                            Toast.makeText(requireContext(), "Failed to get city name", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Log.e("Location", "Failed to show toast", e)
+                        }
                     }
                 } else {
                     Toast.makeText(requireContext(), "Failed to get location", Toast.LENGTH_SHORT).show()

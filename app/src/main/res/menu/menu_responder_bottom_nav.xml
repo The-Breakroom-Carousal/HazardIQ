@@ -9,7 +9,11 @@
         android:title="Map"
         android:icon="@drawable/outline_location_on_24" />
     <item
-    android:id="@+id/nav_rReport"
-    android:title="Report"
-    android:icon="@drawable/outline_description_24" />
+        android:id="@+id/nav_rweather"
+        android:title="Weather"
+        android:icon="@drawable/baseline_cloud_queue_24" />
+    <item
+        android:id="@+id/nav_rReport"
+        android:title="Report"
+        android:icon="@drawable/outline_description_24" />
 </menu>
