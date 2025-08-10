@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
 import android.telephony.PhoneNumberUtils
@@ -90,6 +91,26 @@ class ReactSosActitvity : AppCompatActivity() {
         btnCopyDetails = findViewById(R.id.btnCopyDetails)
 
         // fill basic details
+        val geocoder = Geocoder(this , Locale.getDefault())
+        val address = geocoder.getFromLocation(lat, lng, 1)?.firstOrNull()
+        if (address != null) {
+            val street = address.thoroughfare ?: "Unknown Street"
+            val locality = address.locality ?: "Unknown Locality"
+            val subLocality = address.subLocality ?: "Unknown Area"
+            val city = address.adminArea ?: "Unknown City"
+
+            val sb = StringBuilder()
+            if (street != "Unknown Street") {
+                sb.append("$street, ")
+            }
+            if (subLocality != "Unknown Area") {
+                sb.append("$subLocality, ")
+            }
+            if (locality != "Unknown Locality") {
+                sb.append(locality)
+            }
+            tvDestinationName.text = sb.toString()
+        }
         tvSOSType.text = type.uppercase()
         tvSOSSender.text = requesterName
         tvLatLng.text = "Lat: %.4f, Lng: %.4f".format(Locale.getDefault(), lat, lng)
