@@ -163,26 +163,23 @@
                         android:layout_height="wrap_content"
                         app:cardCornerRadius="24dp"
                         android:layout_marginEnd="8dp"
-                        app:strokeColor="@color/md_theme_primary">
+                        app:cardBackgroundColor="@color/md_theme_primary">
 
                         <ImageView
-                            android:id="@+id/imageView5"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:id="@+id/ivWeather"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
                             android:layout_gravity="center_vertical"
                             android:padding="8dp"
-                            app:tint="?attr/colorOnBackground"
                             android:src="@drawable/baseline_cloud_queue_24" />
-
                     </com.google.android.material.card.MaterialCardView>
-
-
 
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:layout_weight="1"
+                        android:layout_gravity="center_vertical"
                         android:layout_marginEnd="8dp">
 
                         <TextView

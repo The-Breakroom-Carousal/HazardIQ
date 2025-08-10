@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.location.Geocoder
 import android.os.Bundle
@@ -18,7 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.LocationServices
 import com.hazardiqplus.R
-import com.hazardiqplus.clients.AirQualityApiClient
+import com.hazardiqplus.clients.OpenMeteoClient
 import com.hazardiqplus.data.CityPoint
 import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment.AQIData
 import com.mapbox.geojson.Feature
@@ -53,16 +52,15 @@ import com.google.android.material.snackbar.Snackbar
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.ui.MainActivity
+import com.hazardiqplus.ui.citizen.HazardChatActivity
 import com.mapbox.geojson.Polygon
 import com.mapbox.maps.RenderedQueryGeometry
 import com.mapbox.maps.RenderedQueryOptions
 import com.mapbox.maps.coroutine.queryRenderedFeatures
 import com.mapbox.maps.extension.style.layers.Layer
 import com.mapbox.maps.extension.style.layers.getLayer
-import com.mapbox.maps.extension.style.sources.getSourceAs
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.turf.TurfJoins
-import com.mapbox.turf.TurfMeasurement
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -153,7 +151,11 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                             t: Throwable
                         ) {
                             Log.e("Hazard", "Failed to load hazard", t)
-                            Snackbar.make(requireView(), "Failed to load hazard", Snackbar.LENGTH_SHORT).show()
+                            try {
+                                Snackbar.make(requireView(), "Failed to load hazard", Snackbar.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Log.e("Snackbar", "Failed to show snackbar", e)
+                            }
                         }
                     })
                 withContext(Dispatchers.Main) {
@@ -200,7 +202,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                 .addOnFailureListener { e ->
                     Log.e("Location", "Failed to get location", e)
                 }
-            val response = AirQualityApiClient.api.getAQIHourly(lat, lon)
+            val response = OpenMeteoClient.api.getAQIHourly(lat, lon)
 
             val hourly = response.hourly
             if (hourly != null) {
@@ -297,6 +299,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
             val polygon = TurfTransformation.circle(point, radiusKm * 1000, 64, TurfConstants.UNIT_METERS)
             val polygonFeature = Feature.fromGeometry(polygon)
             polygonFeature.addStringProperty("hazard", hazardType)
+            polygonFeature.addNumberProperty("hazard_id", hazardId)
             polygonFeatures.add(polygonFeature)
 
             // Point for icon and label
@@ -364,7 +367,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
     suspend fun getLiveAQIData(lat: Double, lon: Double): AQIData {
         return withContext(Dispatchers.IO) {
             try {
-                val response = AirQualityApiClient.api.getAQIHourly(lat, lon)
+                val response = OpenMeteoClient.api.getAQIHourly(lat, lon)
 
                 if (response.hourly != null) {
                     val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:00", Locale.getDefault())
@@ -407,10 +410,12 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                     Log.d("Map", "Point: $geometry")
                     val isInside = TurfJoins.inside(point, geometry)
                     if (isInside) {
+                        Log.d("Map", "Inside: $isInside")
                         withContext(Dispatchers.Main) {
-                            val intent = Intent(requireContext(), MainActivity::class.java)
-                            intent.putExtra("hazard_id", feature.queriedFeature.feature.getNumberProperty("hazard_id"))
-                            intent.putExtra("hazard_type", feature.queriedFeature.feature.getStringProperty("hazard"))
+                            val intent = Intent(requireContext(), HazardChatActivity::class.java)
+                            Log.d("Map", "Feature: ${feature.queriedFeature.feature}")
+                            intent.putExtra("hazard_id", feature.queriedFeature.feature.getNumberProperty("hazard_id").toLong().toString())
+                            intent.putExtra("hazard_type", feature.queriedFeature.feature.getStringProperty("hazard").toString())
                             startActivity(intent)
                         }
                         return true

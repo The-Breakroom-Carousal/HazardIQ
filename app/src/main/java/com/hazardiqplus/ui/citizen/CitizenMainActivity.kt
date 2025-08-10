@@ -13,6 +13,7 @@ import com.hazardiqplus.R
 import com.hazardiqplus.ui.citizen.fragments.CitizenSosFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
+import com.hazardiqplus.ui.citizen.fragments.CitizenWeatherFragment
 
 class CitizenMainActivity : AppCompatActivity() {
 
@@ -44,15 +45,21 @@ class CitizenMainActivity : AppCompatActivity() {
                         .commit()
                     true
                 }
-                R.id.nav_sos -> {
+                R.id.nav_weather -> {
                     supportFragmentManager.beginTransaction()
-                        .replace(R.id.fragmentContainer, CitizenSosFragment())
+                        .replace(R.id.fragmentContainer, CitizenWeatherFragment())
                         .commit()
                     true
                 }
                 R.id.nav_report -> {
                     supportFragmentManager.beginTransaction()
                         .replace(R.id.fragmentContainer, CitizenReportsFragment())
+                        .commit()
+                    true
+                }
+                R.id.nav_sos -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragmentContainer, CitizenSosFragment())
                         .commit()
                     true
                 }

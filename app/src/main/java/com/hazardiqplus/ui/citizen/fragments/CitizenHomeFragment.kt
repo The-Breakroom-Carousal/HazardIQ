@@ -7,28 +7,19 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.location.Geocoder
-import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.get
-import androidx.core.graphics.scale
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -41,15 +32,13 @@ import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputEditText
 import com.hazardiqplus.R
 import com.hazardiqplus.adapters.PredictedAqi
 import com.hazardiqplus.adapters.PredictedAqiAdapter
-import com.hazardiqplus.clients.AirQualityApiClient
+import com.hazardiqplus.clients.OpenMeteoClient
 import com.hazardiqplus.clients.CityModelMapper
 import com.hazardiqplus.clients.HazardGeofenceReceiver
 import com.hazardiqplus.clients.RetrofitClient
@@ -57,10 +46,6 @@ import com.hazardiqplus.clients.WeatherApiClient
 import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
-import com.hazardiqplus.data.SaveHazardRequest
-import com.hazardiqplus.data.SaveHazardResponse
-import com.hazardiqplus.ml.BestModel
-import com.hazardiqplus.ui.ProfileActivity
 import com.hazardiqplus.utils.WeatherReportScheduler
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
@@ -86,12 +71,9 @@ import com.mapbox.turf.TurfTransformation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.tensorflow.lite.DataType
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -110,6 +92,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     private lateinit var tvAqiStatus: TextView
     private lateinit var tvTemperature: TextView
     private lateinit var tvWeather: TextView
+    private lateinit var ivWeather: ImageView
     private lateinit var tvCurrentTime: TextView
     private lateinit var predictedAdapter: PredictedAqiAdapter
     private lateinit var predictedRecycler: RecyclerView
@@ -212,7 +195,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     @SuppressLint("SetTextI18n")
     private suspend fun loadCurrentAQIofUser(lat: Double, lon: Double, features: MutableList<Feature>) {
         try {
-            val response = AirQualityApiClient.api.getAQIHourly(lat, lon)
+            val response = OpenMeteoClient.api.getAQIHourly(lat, lon)
 
             val hourly = response.hourly
             if (hourly != null) {
@@ -520,12 +503,34 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
                         val weather = getWeatherData(lat, lon)
                         tvTemperature.text = "${weather.temperature}°C"
                         tvWeather.text = weather.weatherCondition
+                        setWeatherIcon(weather.weatherCode)
                     } catch (_: Exception) {
                         Log.d("Weather", "Failed to load weather")
                     }
                 }
             }
         }
+    }
+
+    private fun setWeatherIcon(code: Int) {
+        val currentTime = SimpleDateFormat("HH", Locale.getDefault()).format(Date()).toInt()
+        val iconRes = when (code) {
+            0 -> if (currentTime in 5..17) R.drawable.clear_day else R.drawable.clear_night
+            1, 2, 3 -> if (currentTime in 5..17) R.drawable.partly_cloudy_day else R.drawable.partly_cloudy_night
+            45, 48 -> R.drawable.fog
+            51, 53, 55 -> R.drawable.drizzle
+            56, 57 -> R.drawable.drizzle
+            61, 63, 65 -> R.drawable.raindrops
+            66, 67 -> R.drawable.raindrops
+            71, 73, 75 -> R.drawable.snow
+            77 -> R.drawable.snowflake
+            80, 81, 82 -> R.drawable.rain
+            85, 86 -> R.drawable.snow
+            95 -> if (currentTime in 5..17) R.drawable.thunderstorms_day else R.drawable.thunderstorms_night
+            96, 99 -> if (currentTime in 5..17) R.drawable.thunderstorms_day_rain else R.drawable.thunderstorms_night_rain
+            else -> R.drawable.baseline_cloud_queue_24
+        }
+        ivWeather.setImageResource(iconRes)
     }
 
     private suspend fun getWeatherData(lat: Double, lon: Double): WeatherData {
@@ -601,6 +606,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
         tvAqiStatus = view.findViewById(R.id.tvAqiStatus)
         tvTemperature = view.findViewById(R.id.tvTemperature)
         tvWeather = view.findViewById(R.id.tvWeather)
+        ivWeather = view.findViewById(R.id.ivWeather)
         tvCurrentTime = view.findViewById(R.id.tvCurrentTime)
         mapView = view.findViewById(R.id.mapView)
         btnFullScreenMap = view.findViewById(R.id.btnFullScreenMap)
@@ -771,7 +777,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
             try {
                 // 1. Fetch additional pollutants from Open-Meteo
                 val openMeteoResponse = withContext(Dispatchers.IO) {
-                    AirQualityApiClient.api.getAQIHourly(lat, lon)
+                    OpenMeteoClient.api.getAQIHourly(lat, lon)
                 }
                 val hourly = openMeteoResponse.hourly ?: return@launch
 

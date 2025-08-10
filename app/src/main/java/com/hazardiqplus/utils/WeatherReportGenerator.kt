@@ -18,7 +18,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth
 import com.hazardiqplus.R
-import com.hazardiqplus.clients.AirQualityApiClient
+import com.hazardiqplus.clients.OpenMeteoClient
 import com.hazardiqplus.ui.MainActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -51,7 +51,7 @@ class WeatherReportGenerator (
         }
 
         return try {
-            val response = AirQualityApiClient.api.getAQIHourly(lat, lon)
+            val response = OpenMeteoClient.api.getAQIHourly(lat, lon)
             val hourly = response.hourly
             if (hourly != null) {
                 val pm25 = hourly.pm2_5.firstOrNull() ?: 0.0
