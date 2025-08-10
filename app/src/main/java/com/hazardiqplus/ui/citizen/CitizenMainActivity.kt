@@ -9,9 +9,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.button.MaterialButtonToggleGroup
 import com.hazardiqplus.R
 import com.hazardiqplus.ui.ProfileActivity
+import com.hazardiqplus.ui.AiChatActivity
 import com.hazardiqplus.ui.citizen.fragments.CitizenSosFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
@@ -74,7 +74,8 @@ class CitizenMainActivity : AppCompatActivity() {
         }
 
         extendedFabChatbot.setOnClickListener {
-            // Handle chatbot button click
+            val intent = Intent(this, AiChatActivity::class.java)
+            startActivity(intent)
         }
         extendedFabProfile.setOnClickListener {
             val intent = Intent(this, ProfileActivity::class.java)

@@ -1,5 +1,8 @@
 package com.hazardiqplus.services
 
+import com.hazardiqplus.data.AiChatRequest
+import com.hazardiqplus.data.AiChatResponse
+import com.hazardiqplus.data.ChatHistoryItemDto
 import com.hazardiqplus.data.DeleteSosResponse
 import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.FindHazardResponse
@@ -69,4 +72,23 @@ interface ApiService {
 
     @GET("api/get-name")
     fun getUserName(@Header("uid") uid: String): Call<UserName>
+
+
+    @PUT("api/ai-chat")
+    fun sendMessage(
+        @Header("idtoken") idToken: String,
+        @Body request: AiChatRequest
+    ): Call<AiChatResponse> // Use the correct response type
+
+    @GET("api/ai-chat/history")
+    fun getHistory(
+        @Header("idtoken") idToken: String
+    ): Call<ChatHistoryResponse>
+
+    @POST("api/ai-chat/restart")
+    fun restartChat(
+        @Header("idtoken") idToken: String
+    ): Call<Void>
+
 }
+data class ChatHistoryResponse(val success: Boolean, val history: List<ChatHistoryItemDto>)
