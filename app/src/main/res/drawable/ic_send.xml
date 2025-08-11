@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Use a tintable color by default (app theme's control color).
+         You can change to a fixed color like "#000000" if desired. -->
+    <path
+        android:fillColor="?attr/colorControlNormal"
+        android:pathData="M2.01,21 L23,12 L2.01,3 L2,10 l15,2 l-15,2 z" />
+</vector>

@@ -6,8 +6,11 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
+import okhttp3.ResponseBody
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -28,7 +31,7 @@ class AiChatActivity : AppCompatActivity() {
 
     private lateinit var recycler: RecyclerView
     private lateinit var input: EditText
-    private lateinit var sendBtn: Button
+    private lateinit var sendBtn: ImageButton
     private lateinit var adapter: ChatMessageAdapter
     private val messages = ArrayList<ChatMessage>()
     private var currentUid: String? = null
@@ -37,7 +40,11 @@ class AiChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_ai_chat)
 
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
         supportActionBar?.title = "AI Chat"
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         recycler = findViewById(R.id.chatRecyclerView)
         input = findViewById(R.id.messageInput)
         sendBtn = findViewById(R.id.sendButton)
@@ -86,7 +93,7 @@ class AiChatActivity : AppCompatActivity() {
     }
 
     private fun sendMessageToServer(msg: String) {
-        // Add message locally immediately
+
         val now = System.currentTimeMillis()
         messages.add(ChatMessage(msg, "","",now,true, ))
         adapter.notifyItemInserted(messages.size - 1)
@@ -99,7 +106,7 @@ class AiChatActivity : AppCompatActivity() {
                 override fun onResponse(call: Call<AiChatResponse>, response: Response<AiChatResponse>) {
                     if (response.isSuccessful) {
                         val body = response.body()
-                        // Correctly access the nested response string
+
                         val answer = body?.model?.response ?: "No reply from server"
                         messages.add(ChatMessage(answer, "", "", System.currentTimeMillis(), false))
                         adapter.notifyItemInserted(messages.size - 1)
@@ -127,6 +134,12 @@ class AiChatActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+
+            android.R.id.home -> {
+                finish()
+                true
+            }
+
             R.id.action_restart -> {
                 restartConversation()
                 return true
@@ -136,6 +149,7 @@ class AiChatActivity : AppCompatActivity() {
                 adapter.notifyDataSetChanged()
                 return true
             }
+            else -> super.onOptionsItemSelected(item)
         }
         return super.onOptionsItemSelected(item)
     }
@@ -143,17 +157,30 @@ class AiChatActivity : AppCompatActivity() {
     private fun restartConversation() {
         Firebase.auth.currentUser?.getIdToken(true)?.addOnSuccessListener { tokenResult ->
             val idToken = tokenResult.token ?: return@addOnSuccessListener
-            RetrofitClient.instance.restartChat(idToken).enqueue(object : Callback<Void> {
-                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+
+            // The callback now expects ResponseBody
+            RetrofitClient.instance.restartChat(idToken).enqueue(object : Callback<ResponseBody> {
+                override fun onResponse(
+                    call: Call<ResponseBody>,
+                    response: Response<ResponseBody>
+                ) {
+                    // ✅ FIX: Just check if the HTTP status was successful (2xx).
+                    // We don't care about the body at all.
                     if (response.isSuccessful) {
                         messages.clear()
                         adapter.notifyDataSetChanged()
-                        Toast.makeText(this@AiChatActivity, "Conversation restarted", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@AiChatActivity,
+                            "Conversation restarted",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else {
-                        Toast.makeText(this@AiChatActivity, "Restart failed", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@AiChatActivity, "Restart failed", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }
-                override fun onFailure(call: Call<Void>, t: Throwable) {
+
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     Toast.makeText(this@AiChatActivity, "Network error", Toast.LENGTH_SHORT).show()
                 }
             })
@@ -164,11 +191,11 @@ class AiChatActivity : AppCompatActivity() {
         super.onDestroy()
         Firebase.auth.currentUser?.getIdToken(true)?.addOnSuccessListener { tokenResult ->
             val idToken = tokenResult.token ?: return@addOnSuccessListener
-            RetrofitClient.instance.restartChat(idToken).enqueue(object : Callback<Void> {
-                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+            RetrofitClient.instance.restartChat(idToken).enqueue(object : Callback<ResponseBody> {
+                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     Log.d("AI_CHAT", "server history cleared on exit")
                 }
-                override fun onFailure(call: Call<Void>, t: Throwable) {
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     Log.w("AI_CHAT", "failed clearing server history on exit")
                 }
             })

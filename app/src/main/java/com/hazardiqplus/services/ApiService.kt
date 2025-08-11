@@ -20,6 +20,7 @@ import com.hazardiqplus.data.UserName
 import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
 import com.hazardiqplus.data.UserResponse
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -80,15 +81,15 @@ interface ApiService {
         @Body request: AiChatRequest
     ): Call<AiChatResponse> // Use the correct response type
 
-    @GET("api/ai-chat/history")
+    @GET("api/history")
     fun getHistory(
         @Header("idtoken") idToken: String
     ): Call<ChatHistoryResponse>
 
-    @POST("api/ai-chat/restart")
+    @POST("api/restart")
     fun restartChat(
         @Header("idtoken") idToken: String
-    ): Call<Void>
+    ): Call<ResponseBody>
 
 }
 data class ChatHistoryResponse(val success: Boolean, val history: List<ChatHistoryItemDto>)
