@@ -65,7 +65,7 @@ router.get('/find-hazard', async (req, res) => {
 
 
 router.post('/remove-hazard', async (req, res) => {
-  const id =  req.headers.hazardId;
+  const id =  req.headers.id;
   if (!id) {
     console.warn('Missing hazard ID');
     return res.status(400).json({ error: 'Missing hazard ID' });
