@@ -34,6 +34,7 @@ import com.hazardiqplus.data.UserRegisterRequest
 import com.hazardiqplus.data.UserRegisterResponse
 import com.hazardiqplus.ui.citizen.CitizenMainActivity
 import com.hazardiqplus.ui.responder.ResponderMainActivity
+import com.hazardiqplus.utils.PrefsHelper
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -90,7 +91,7 @@ class SignUpActivity : AppCompatActivity() {
         requestLocationPermission()
 
         tvLogin.setOnClickListener {
-            val intent = Intent(this, LoginSignupActivity::class.java)
+            val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
         }
 
@@ -158,6 +159,9 @@ class SignUpActivity : AppCompatActivity() {
 
                                                     val roleFromResponse =
                                                         response.body()?.user?.role
+                                                    if (roleFromResponse != null) {
+                                                        PrefsHelper.saveUserRole(this@SignUpActivity, roleFromResponse)
+                                                    }
                                                     val next = when (roleFromResponse) {
                                                         "citizen" -> CitizenMainActivity::class.java
                                                         "responder" -> ResponderMainActivity::class.java
@@ -231,6 +235,9 @@ class SignUpActivity : AppCompatActivity() {
 
                                                                 val roleFromResponse =
                                                                     response.body()?.user?.role
+                                                                if (roleFromResponse != null) {
+                                                                    PrefsHelper.saveUserRole(this@SignUpActivity, roleFromResponse)
+                                                                }
                                                                 val next = when (roleFromResponse) {
                                                                     "citizen" -> CitizenMainActivity::class.java
                                                                     "responder" -> ResponderMainActivity::class.java

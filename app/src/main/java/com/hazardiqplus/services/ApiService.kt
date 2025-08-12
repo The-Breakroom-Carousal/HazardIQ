@@ -8,6 +8,7 @@ import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.FindHazardResponse
 import com.hazardiqplus.data.PredictRequest
 import com.hazardiqplus.data.PredictResponse
+import com.hazardiqplus.data.RemoveHazardResponse
 import com.hazardiqplus.data.SaveHazardRequest
 import com.hazardiqplus.data.SaveHazardResponse
 import com.hazardiqplus.data.SosEvent
@@ -91,5 +92,9 @@ interface ApiService {
         @Header("idtoken") idToken: String
     ): Call<ResponseBody>
 
+    @POST("api/remove-hazard")
+    fun removeHazard(
+        @Header("id") id: Int
+    ): Call<RemoveHazardResponse>
 }
 data class ChatHistoryResponse(val success: Boolean, val history: List<ChatHistoryItemDto>)

@@ -50,7 +50,7 @@ class SplashScreenActivity : AppCompatActivity() {
                         }
                     }
             } else{
-                startActivity(Intent(this, LoginSignupActivity::class.java))
+                startActivity(Intent(this, LoginActivity::class.java))
                 finish()
             }
         },3000)

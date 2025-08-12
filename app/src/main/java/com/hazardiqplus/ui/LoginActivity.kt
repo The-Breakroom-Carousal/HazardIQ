@@ -29,11 +29,12 @@ import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.User
 import com.hazardiqplus.ui.citizen.CitizenMainActivity
 import com.hazardiqplus.ui.responder.ResponderMainActivity
+import com.hazardiqplus.utils.PrefsHelper
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class LoginSignupActivity : AppCompatActivity() {
+class LoginActivity : AppCompatActivity() {
 
     private lateinit var firebaseAuth: FirebaseAuth
 
@@ -207,19 +208,22 @@ class LoginSignupActivity : AppCompatActivity() {
 
                 Log.d("DEBUG", "Response JSON: ${response.body()}")
                 val role = response.body()?.role
-                Toast.makeText(this@LoginSignupActivity, "Role: $role", Toast.LENGTH_SHORT).show()
+                if (role != null) {
+                    PrefsHelper.saveUserRole(this@LoginActivity, role)
+                }
+                Toast.makeText(this@LoginActivity, "Role: $role", Toast.LENGTH_SHORT).show()
                 when (role?.lowercase()) {
-                    "citizen" -> startActivity(Intent(this@LoginSignupActivity, CitizenMainActivity::class.java))
-                    "responder" -> startActivity(Intent(this@LoginSignupActivity, ResponderMainActivity::class.java))
-                    else -> startActivity(Intent(this@LoginSignupActivity, SignUpActivity::class.java))
+                    "citizen" -> startActivity(Intent(this@LoginActivity, CitizenMainActivity::class.java))
+                    "responder" -> startActivity(Intent(this@LoginActivity, ResponderMainActivity::class.java))
+                    else -> startActivity(Intent(this@LoginActivity, SignUpActivity::class.java))
                 }
 
                 finish()
             }
 
             override fun onFailure(call: Call<User>, t: Throwable) {
-                Toast.makeText(this@LoginSignupActivity, "Error verifying role", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this@LoginSignupActivity, SignUpActivity::class.java))
+                Toast.makeText(this@LoginActivity, "Error verifying role", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@LoginActivity, SignUpActivity::class.java))
                 finish()
             }
         })

@@ -21,9 +21,7 @@ import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.UserResponse
 import com.hazardiqplus.ui.AiChatActivity
 import com.hazardiqplus.ui.ProfileActivity
-import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
-import com.hazardiqplus.ui.citizen.fragments.CitizenSosFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenWeatherFragment
 import com.hazardiqplus.ui.citizen.fragments.FullScreenMapFragment
 import com.hazardiqplus.ui.responder.fragments.ResponderHomeFragment

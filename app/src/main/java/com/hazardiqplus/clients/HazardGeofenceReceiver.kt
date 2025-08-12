@@ -11,7 +11,7 @@ import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.hazardiqplus.R
-import com.hazardiqplus.ui.LoginSignupActivity
+import com.hazardiqplus.ui.LoginActivity
 
 class HazardGeofenceReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -36,7 +36,7 @@ class HazardGeofenceReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val intent = Intent(context, LoginSignupActivity::class.java).apply {
+        val intent = Intent(context, LoginActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = PendingIntent.getActivity(

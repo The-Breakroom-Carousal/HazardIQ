@@ -60,7 +60,7 @@
             android:name=".ui.SignUpActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.LoginSignupActivity"
+            android:name=".ui.LoginActivity"
             android:exported="false" />
 
         <service
