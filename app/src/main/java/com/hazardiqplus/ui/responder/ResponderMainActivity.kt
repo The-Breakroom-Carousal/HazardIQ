@@ -37,7 +37,7 @@ class ResponderMainActivity : AppCompatActivity() {
 
     private lateinit var responderBottomNav: BottomNavigationView
     private lateinit var extendedFabRChatbot: ExtendedFloatingActionButton
-    private lateinit var extendedFabRProfile: ExtendedFloatingActionButton
+    private lateinit var extendedFabRProfile: FloatingActionButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
