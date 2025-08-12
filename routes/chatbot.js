@@ -40,10 +40,7 @@ router.put('/ai-chat', async (req, res) => {
     const response = await axios.post('https://hazard-iq-plus-rag.onrender.com/query', { user_id: uid });
 
     const assistantMsg = response?.data?.response || JSON.stringify(response.data);
-    await pool.query(
-      `INSERT INTO chat_history (user_id, role, message) VALUES ($1, $2, $3)`,
-      [uid, 'assistant', assistantMsg]
-    );
+
 
     return res.json({ success: true, model: response.data });
   } catch (err) {
