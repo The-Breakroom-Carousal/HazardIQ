@@ -46,21 +46,16 @@ class LoginSignupActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login_signup)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.loginMain)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
-            insets
-        }
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.loginBottomSheet)) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
         firebaseAuth = FirebaseAuth.getInstance()
         val signup =findViewById<TextView>(R.id.textView)
-        val Sgnbtn =findViewById<Button>(R.id.sgninbutton)
+        val Sgnbtn =findViewById<Button>(R.id.btnSignIn)
         val emailEt=findViewById<EditText>(R.id.emailEt)
         val passEt=findViewById<EditText>(R.id.passET)
-        val fgtpass=findViewById<TextView>(R.id.forgotPasswordText)
+        val fgtpass=findViewById<TextView>(R.id.tvForgot)
 
         checkAndRequestPermission()
 
