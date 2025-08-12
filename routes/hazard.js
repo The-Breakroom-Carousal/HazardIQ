@@ -64,6 +64,30 @@ router.get('/find-hazard', async (req, res) => {
 });
 
 
+router.post('/remove-hazard', async (req, res) => {
+  const id =  req.headers.hazardId;
+  if (!id) {
+    console.warn('Missing hazard ID');
+    return res.status(400).json({ error: 'Missing hazard ID' });
+  }
+  try {
+    const result = await pool.query(
+      `DELETE FROM hazard_data WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      console.warn('Hazard not found');
+      return res.status(404).json({ error: 'Hazard not found' });
+    }
+
+    console.log('Hazard removed successfully:', result.rows[0]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error('Error removing hazard:', err.message);
+    res.status(500).json({ error: 'Failed to remove hazard' });
+  }
+})
 
 module.exports = router;
 
