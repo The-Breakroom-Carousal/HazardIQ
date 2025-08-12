@@ -31,20 +31,22 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="@string/app_name"
-        android:text="Chatbot"
         app:icon="@drawable/robot_2_24px"
-        app:layout_constraintBottom_toTopOf="@+id/extendedFabRProfile"
+        app:layout_constraintBottom_toBottomOf="@+id/responderFragmentContainer"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/extendedFabRProfile"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="@string/app_name"
-        android:text="Profile"
-        app:icon="@drawable/outline_account_circle_24"
-        app:layout_constraintBottom_toBottomOf="@+id/responderFragmentContainer"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:showMotionSpec="@null"
+        app:hideMotionSpec="@null"
+        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/outline_account_circle_24"
+        app:tint="#FFFFFF"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

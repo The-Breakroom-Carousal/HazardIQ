@@ -104,7 +104,6 @@ class ResponderMainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Launch a single coroutine to handle token logic
         lifecycleScope.launch {
             try {
                 // Step 1: Get the actual FCM token from Firebase Messaging

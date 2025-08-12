@@ -9,6 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hazardiqplus.R
 import com.hazardiqplus.ui.ProfileActivity
 import com.hazardiqplus.ui.AiChatActivity
@@ -21,7 +22,7 @@ class CitizenMainActivity : AppCompatActivity() {
 
     private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var extendedFabChatbot: Button
-    private lateinit var extendedFabProfile: Button
+    private lateinit var extendedFabProfile: FloatingActionButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
