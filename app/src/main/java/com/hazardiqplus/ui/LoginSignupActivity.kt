@@ -43,7 +43,7 @@ class LoginSignupActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login_signup)
+        setContentView(R.layout.activity_login)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.loginMain)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -98,8 +98,7 @@ class LoginSignupActivity : AppCompatActivity() {
 
             val googleSignInClient = GoogleSignIn.getClient(this, gso)
             val signInIntent = googleSignInClient.signInIntent
-            startActivityForResult(signInIntent,RC_SIGN_IN
-            )
+            startActivityForResult(signInIntent,RC_SIGN_IN)
         }
 
         signup.setOnClickListener {
@@ -120,7 +119,7 @@ class LoginSignupActivity : AppCompatActivity() {
                                 if (token != null) {
                                     checkUserRoleAndRedirect(token)
                                 } else {
-                                    startActivity(Intent(this, RoleSelectionActivity::class.java))
+                                    startActivity(Intent(this, SignUpActivity::class.java))
                                     finish()
                                 }
                             }
@@ -154,7 +153,7 @@ class LoginSignupActivity : AppCompatActivity() {
                             if (token != null) {
                                 checkUserRoleAndRedirect(token)
                             } else {
-                                startActivity(Intent(this, RoleSelectionActivity::class.java))
+                                startActivity(Intent(this, SignUpActivity::class.java))
                                 finish()
                             }
                         }
@@ -212,8 +211,7 @@ class LoginSignupActivity : AppCompatActivity() {
                 when (role?.lowercase()) {
                     "citizen" -> startActivity(Intent(this@LoginSignupActivity, CitizenMainActivity::class.java))
                     "responder" -> startActivity(Intent(this@LoginSignupActivity, ResponderMainActivity::class.java))
-                    "admin" -> Toast.makeText(this@LoginSignupActivity, "Admin not implemented", Toast.LENGTH_SHORT).show()
-                    else -> startActivity(Intent(this@LoginSignupActivity, RoleSelectionActivity::class.java))
+                    else -> startActivity(Intent(this@LoginSignupActivity, SignUpActivity::class.java))
                 }
 
                 finish()
@@ -221,7 +219,7 @@ class LoginSignupActivity : AppCompatActivity() {
 
             override fun onFailure(call: Call<User>, t: Throwable) {
                 Toast.makeText(this@LoginSignupActivity, "Error verifying role", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this@LoginSignupActivity, RoleSelectionActivity::class.java))
+                startActivity(Intent(this@LoginSignupActivity, SignUpActivity::class.java))
                 finish()
             }
         })

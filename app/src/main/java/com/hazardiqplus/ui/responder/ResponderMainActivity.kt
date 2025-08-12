@@ -19,6 +19,7 @@ import com.hazardiqplus.R
 import com.hazardiqplus.clients.RetrofitClient
 import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.UserResponse
+import com.hazardiqplus.ui.AiChatActivity
 import com.hazardiqplus.ui.ProfileActivity
 import com.hazardiqplus.ui.citizen.fragments.CitizenHomeFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
@@ -94,8 +95,10 @@ class ResponderMainActivity : AppCompatActivity() {
         }
 
         extendedFabRChatbot.setOnClickListener {
-            // Handle chatbot button click
+            val intent = Intent(this, AiChatActivity::class.java)
+            startActivity(intent)
         }
+
         extendedFabRProfile.setOnClickListener {
             val intent = Intent(this, ProfileActivity::class.java)
             startActivity(intent)

@@ -67,8 +67,7 @@ class SplashScreenActivity : AppCompatActivity() {
                 when (role?.lowercase()) {
                     "citizen" -> startActivity(Intent(this@SplashScreenActivity, CitizenMainActivity::class.java))
                     "responder" -> startActivity(Intent(this@SplashScreenActivity, ResponderMainActivity::class.java))
-                    "admin" -> Toast.makeText(this@SplashScreenActivity, "Admin not implemented", Toast.LENGTH_SHORT).show()
-                    else -> startActivity(Intent(this@SplashScreenActivity, RoleSelectionActivity::class.java))
+                    else -> startActivity(Intent(this@SplashScreenActivity, SignUpActivity::class.java))
                 }
 
                 finish()
@@ -76,7 +75,7 @@ class SplashScreenActivity : AppCompatActivity() {
 
             override fun onFailure(call: Call<User>, t: Throwable) {
                 Toast.makeText(this@SplashScreenActivity, "Error verifying role", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this@SplashScreenActivity, RoleSelectionActivity::class.java))
+                startActivity(Intent(this@SplashScreenActivity, SignUpActivity::class.java))
                 finish()
             }
         })

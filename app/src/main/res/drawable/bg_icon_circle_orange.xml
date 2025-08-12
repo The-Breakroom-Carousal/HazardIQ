@@ -9,8 +9,8 @@
     <gradient
         android:type="linear"
         android:angle="135"
-        android:startColor="#2EF94C"
-        android:endColor="#16934A" />
+        android:startColor="#FFA500"
+        android:endColor="#FFF500" />
 
     <!-- Optional shadow (API 21+) -->
     <padding
