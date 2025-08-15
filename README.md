@@ -170,7 +170,7 @@ HazardIQ+ bridges the gap by providing:
 - Android Studio Giraffe+  
 - JDK 17+  
 - Node.js 18+  
-- MongoDB  
+- PostgreSQL 
 - Firebase Project with Auth enabled  
 
 ### Setup
