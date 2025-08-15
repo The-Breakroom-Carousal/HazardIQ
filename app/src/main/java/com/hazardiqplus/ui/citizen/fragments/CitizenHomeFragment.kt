@@ -864,7 +864,11 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-        Toast.makeText(requireContext(), message, duration).show()
+        try {
+            Toast.makeText(requireContext(), message, duration).show()
+        } catch (e: Exception) {
+            Log.e("Toast", "Failed to show toast", e)
+        }
     }
 
     private fun shouldUpdateLocation(newLat: Double, newLon: Double): Boolean {

@@ -98,8 +98,10 @@ class LoginActivity : AppCompatActivity() {
                 .build()
 
             val googleSignInClient = GoogleSignIn.getClient(this, gso)
-            val signInIntent = googleSignInClient.signInIntent
-            startActivityForResult(signInIntent,RC_SIGN_IN)
+            googleSignInClient.signOut().addOnCompleteListener {
+                val signInIntent = googleSignInClient.signInIntent
+                startActivityForResult(signInIntent, RC_SIGN_IN)
+            }
         }
 
         signup.setOnClickListener {
