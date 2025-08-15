@@ -42,7 +42,7 @@ class ResponderMainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_responder_main)
         enableEdgeToEdge()
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.responderFragmentContainer)) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.responderMain)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
