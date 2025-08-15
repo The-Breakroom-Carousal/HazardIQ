@@ -43,10 +43,10 @@ An all-in-one **citizen safety platform** with real-time alerts, SOS requests, h
 ## 📲 Screenshots
 
 <p align="center">
-  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(1).png" width="22%" />
-  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(2).png" width="22%" />
+  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(11).png" width="22%" />
+  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(12).png" width="22%" />
+  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(10).png" width="22%" />
   <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(3).png" width="22%" />
-  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(4).png" width="22%" />
 </p>
 <p align="center">
   <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(5).png" width="22%" />
@@ -55,9 +55,14 @@ An all-in-one **citizen safety platform** with real-time alerts, SOS requests, h
   <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(8).png" width="22%" />
 </p>
 <p align="center">
+  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(4).png" width="22%" />
+  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(13).png" width="22%" />
+  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(1).png" width="22%" />
+  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(2).png" width="22%" />
+</p>
+<p align="center">
   <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(9).png" width="22%" />
-  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(10).png" width="22%" />
-  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(11).png" width="22%" />
+  <img src="https://github.com/The-Breakroom-Carousal/HazardIQ/blob/android/screenshots/screenshot%20(14).png" width="22%" />
 </p>
 
 
