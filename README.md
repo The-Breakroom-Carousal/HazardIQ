@@ -33,10 +33,10 @@ An all-in-one **citizen safety platform** with real-time alerts, SOS requests, h
 | **Category** | **Technologies** |
 |--------------|------------------|
 | **Frontend** | Android (Kotlin), Material Design 3 |
-| **Backend**  | Node.js, Express.js, Supabase/PostgreSQL |
-| **APIs**     | OpenWeather, AQI APIs, Mapbox, Hugging Face |
-| **AI**       | Custom ML model hosted on Hugging Face Spaces |
-| **Other**    | Retrofit, Glide, Coroutines, ViewModel, LiveData |
+| **Backend**  | Node.js, Express.js, PostgreSQL/Neon, FirebaseAuth, Firebase Cloud Notifications |
+| **APIs**     | OpenWeather, AQI APIs, Mapbox, Hugging Face, Fast API |
+| **AI**       | TfLite, Custom ML model hosted on Hugging Face Spaces |
+| **Other**    | Retrofit, WebSocket, Work Manager, Geofencing, Geocoding & Reverse Geocoding, Shared Preferences |
 
 ---
 
