@@ -80,7 +80,7 @@ class ProfileActivity : AppCompatActivity() {
         user.getIdToken(true).addOnSuccessListener { result ->
             val idToken = result.token
             if (idToken != null) {
-                val call = RetrofitClient.instance.getUserDetails(idToken)
+                val call = RetrofitClient.backendInstance.getUserDetails(idToken)
 
                 call.enqueue(object : Callback<User> {
                     override fun onResponse(call: Call<User>, response: Response<User>) {

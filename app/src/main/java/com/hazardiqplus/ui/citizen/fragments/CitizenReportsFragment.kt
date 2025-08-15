@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -27,7 +26,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
@@ -48,7 +46,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.File
-import java.util.Locale
 
 class CitizenReportsFragment : Fragment(R.layout.fragment_citizen_reports) {
 
@@ -146,7 +143,7 @@ class CitizenReportsFragment : Fragment(R.layout.fragment_citizen_reports) {
                     if (location != null) {
                         val lat = location.latitude
                         val lon = location.longitude
-                        RetrofitClient.instance.findHazard(lat, lon, 2000)
+                        RetrofitClient.backendInstance.findHazard(lat, lon, 2000)
                             .enqueue(object : Callback<FindHazardResponse> {
                                 override fun onResponse(
                                     call: Call<FindHazardResponse>,
@@ -312,7 +309,7 @@ class CitizenReportsFragment : Fragment(R.layout.fragment_citizen_reports) {
                 if (location != null) {
                     val request = SaveHazardRequest(radius, location.latitude, location.longitude, hazard)
 
-                    RetrofitClient.instance.registerHazard(request)
+                    RetrofitClient.backendInstance.registerHazard(request)
                         .enqueue(object : Callback<SaveHazardResponse> {
                             override fun onResponse(
                                 call: Call<SaveHazardResponse>,

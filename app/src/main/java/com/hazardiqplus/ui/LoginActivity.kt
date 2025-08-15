@@ -202,7 +202,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun checkUserRoleAndRedirect(idToken: String) {
-        val call = RetrofitClient.instance.getUserDetails(idToken)
+        val call = RetrofitClient.backendInstance.getUserDetails(idToken)
         call.enqueue(object : Callback<User> {
             override fun onResponse(call: Call<User>, response: Response<User>) {
 

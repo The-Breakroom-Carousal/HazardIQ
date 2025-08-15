@@ -16,4 +16,8 @@
         android:id="@+id/nav_sos"
         android:title="SOS"
         android:icon="@drawable/warning_24px" />
+    <item
+        android:id="@+id/nav_med_recommender"
+        android:title="Medication"
+        android:icon="@drawable/baseline_medical_services_24" />
 </menu>

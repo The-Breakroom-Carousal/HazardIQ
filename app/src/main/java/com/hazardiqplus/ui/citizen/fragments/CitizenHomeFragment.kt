@@ -248,7 +248,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
     }
 
     private fun loadHazardInUserLocation(currentLat: Double?, currentLon: Double?, hazardFeatures: MutableList<Feature>) {
-        RetrofitClient.instance.findHazard(currentLat, currentLon, 2000)
+        RetrofitClient.backendInstance.findHazard(currentLat, currentLon, 2000)
             .enqueue(object : Callback<FindHazardResponse> {
                 override fun onResponse(
                     call: Call<FindHazardResponse?>,
@@ -746,7 +746,7 @@ class CitizenHomeFragment : Fragment(R.layout.fragment_citizen_home) {
 
     private fun predictAirQuality(city: String, state: String, lat: Double, lon: Double) {
         val request = PredictRequest(city, state, lat, lon, 23)
-        RetrofitClient.instance.predictAirQuality(request)
+        RetrofitClient.backendInstance.predictAirQuality(request)
             .enqueue(object : Callback<PredictResponse> {
                 override fun onResponse(
                     call: Call<PredictResponse>,

@@ -120,165 +120,163 @@ class SignUpActivity : AppCompatActivity() {
             val pass = etPassword.text.toString().trim()
             val confirmPass = etConfirmPassword.text.toString().trim()
 
-            if (fullName.isNotEmpty() && email.isNotEmpty() && pass.isNotEmpty() && confirmPass.isNotEmpty() && selectedRole != null) {
+            if (signedUpWithGoogle) {
+                FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
+                    FirebaseAuth.getInstance().currentUser?.getIdToken(true)
+                        ?.addOnSuccessListener { tokenResult ->
+                            val idToken =
+                                tokenResult.token ?: return@addOnSuccessListener
+
+                            val request = UserRegisterRequest(
+                                idToken = idToken,
+                                name = fullName,
+                                email = email,
+                                role = selectedRole!!,
+                                fcm_token = fcmToken,
+                                location_lat = currentLat,
+                                location_lng = currentLng
+                            )
+
+                            RetrofitClient.backendInstance.registerUser(request)
+                                .enqueue(object :
+                                    Callback<UserRegisterResponse> {
+                                    override fun onResponse(
+                                        call: Call<UserRegisterResponse>,
+                                        response: Response<UserRegisterResponse>
+                                    ) {
+                                        if (response.isSuccessful && response.body()?.success == true) {
+                                            Toast.makeText(
+                                                this@SignUpActivity,
+                                                "✅ Registered",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+
+                                            val roleFromResponse =
+                                                response.body()?.user?.role
+                                            if (roleFromResponse != null) {
+                                                PrefsHelper.saveUserRole(this@SignUpActivity, roleFromResponse)
+                                            }
+                                            val next = when (roleFromResponse) {
+                                                "citizen" -> CitizenMainActivity::class.java
+                                                "responder" -> ResponderMainActivity::class.java
+                                                else -> null
+                                            }
+                                            next?.let {
+                                                startActivity(
+                                                    Intent(
+                                                        this@SignUpActivity,
+                                                        it
+                                                    )
+                                                )
+                                                finish()
+                                            }
+                                        } else {
+                                            Toast.makeText(
+                                                this@SignUpActivity,
+                                                "⚠️ Backend registration failed",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+
+                                    override fun onFailure(
+                                        call: Call<UserRegisterResponse>,
+                                        t: Throwable
+                                    ) {
+                                        Toast.makeText(
+                                            this@SignUpActivity,
+                                            "❌ Network error",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                })
+                        }
+                }
+            }
+            else if (fullName.isNotEmpty() && email.isNotEmpty() && pass.isNotEmpty() && confirmPass.isNotEmpty() && selectedRole != null) {
                 if (pass == confirmPass) {
                     if (pass.length < 6) {
                         etPassword.error = "Password must be at least 6 characters long"
                         return@setOnClickListener
                     }
-                    if (signedUpWithGoogle) {
-                        FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
-                            FirebaseAuth.getInstance().currentUser?.getIdToken(true)
-                                ?.addOnSuccessListener { tokenResult ->
-                                    val idToken =
-                                        tokenResult.token ?: return@addOnSuccessListener
+                    firebaseAuth.createUserWithEmailAndPassword(email, pass)
+                        .addOnCompleteListener {
+                            if (it.isSuccessful) {
+                                FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
+                                    FirebaseAuth.getInstance().currentUser?.getIdToken(true)
+                                        ?.addOnSuccessListener { tokenResult ->
+                                            val idToken =
+                                                tokenResult.token ?: return@addOnSuccessListener
 
-                                    val request = UserRegisterRequest(
-                                        idToken = idToken,
-                                        name = fullName,
-                                        email = email,
-                                        role = selectedRole!!,
-                                        fcm_token = fcmToken,
-                                        location_lat = currentLat,
-                                        location_lng = currentLng
-                                    )
+                                            val request = UserRegisterRequest(
+                                                idToken = idToken,
+                                                name = fullName,
+                                                email = email,
+                                                role = selectedRole!!,
+                                                fcm_token = fcmToken,
+                                                location_lat = currentLat,
+                                                location_lng = currentLng
+                                            )
 
-                                    RetrofitClient.instance.registerUser(request)
-                                        .enqueue(object :
-                                            Callback<UserRegisterResponse> {
-                                            override fun onResponse(
-                                                call: Call<UserRegisterResponse>,
-                                                response: Response<UserRegisterResponse>
-                                            ) {
-                                                if (response.isSuccessful && response.body()?.success == true) {
-                                                    Toast.makeText(
-                                                        this@SignUpActivity,
-                                                        "✅ Registered",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-
-                                                    val roleFromResponse =
-                                                        response.body()?.user?.role
-                                                    if (roleFromResponse != null) {
-                                                        PrefsHelper.saveUserRole(this@SignUpActivity, roleFromResponse)
-                                                    }
-                                                    val next = when (roleFromResponse) {
-                                                        "citizen" -> CitizenMainActivity::class.java
-                                                        "responder" -> ResponderMainActivity::class.java
-                                                        else -> null
-                                                    }
-                                                    next?.let {
-                                                        startActivity(
-                                                            Intent(
-                                                                this@SignUpActivity,
-                                                                it
-                                                            )
-                                                        )
-                                                        finish()
-                                                    }
-                                                } else {
-                                                    Toast.makeText(
-                                                        this@SignUpActivity,
-                                                        "⚠️ Backend registration failed",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            }
-
-                                            override fun onFailure(
-                                                call: Call<UserRegisterResponse>,
-                                                t: Throwable
-                                            ) {
-                                                Toast.makeText(
-                                                    this@SignUpActivity,
-                                                    "❌ Network error",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        })
-                                }
-                        }
-                    }
-                    else {
-                        firebaseAuth.createUserWithEmailAndPassword(email, pass)
-                            .addOnCompleteListener {
-                                if (it.isSuccessful) {
-                                    FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
-                                        FirebaseAuth.getInstance().currentUser?.getIdToken(true)
-                                            ?.addOnSuccessListener { tokenResult ->
-                                                val idToken =
-                                                    tokenResult.token ?: return@addOnSuccessListener
-
-                                                val request = UserRegisterRequest(
-                                                    idToken = idToken,
-                                                    name = fullName,
-                                                    email = email,
-                                                    role = selectedRole!!,
-                                                    fcm_token = fcmToken,
-                                                    location_lat = currentLat,
-                                                    location_lng = currentLng
-                                                )
-
-                                                RetrofitClient.instance.registerUser(request)
-                                                    .enqueue(object :
-                                                        Callback<UserRegisterResponse> {
-                                                        override fun onResponse(
-                                                            call: Call<UserRegisterResponse>,
-                                                            response: Response<UserRegisterResponse>
-                                                        ) {
-                                                            if (response.isSuccessful && response.body()?.success == true) {
-                                                                Toast.makeText(
-                                                                    this@SignUpActivity,
-                                                                    "✅ Registered",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-
-                                                                val roleFromResponse =
-                                                                    response.body()?.user?.role
-                                                                if (roleFromResponse != null) {
-                                                                    PrefsHelper.saveUserRole(this@SignUpActivity, roleFromResponse)
-                                                                }
-                                                                val next = when (roleFromResponse) {
-                                                                    "citizen" -> CitizenMainActivity::class.java
-                                                                    "responder" -> ResponderMainActivity::class.java
-                                                                    else -> null
-                                                                }
-                                                                next?.let {
-                                                                    startActivity(
-                                                                        Intent(
-                                                                            this@SignUpActivity,
-                                                                            it
-                                                                        )
-                                                                    )
-                                                                    finish()
-                                                                }
-                                                            } else {
-                                                                Toast.makeText(
-                                                                    this@SignUpActivity,
-                                                                    "⚠️ Backend registration failed",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                            }
-                                                        }
-
-                                                        override fun onFailure(
-                                                            call: Call<UserRegisterResponse>,
-                                                            t: Throwable
-                                                        ) {
+                                            RetrofitClient.backendInstance.registerUser(request)
+                                                .enqueue(object :
+                                                    Callback<UserRegisterResponse> {
+                                                    override fun onResponse(
+                                                        call: Call<UserRegisterResponse>,
+                                                        response: Response<UserRegisterResponse>
+                                                    ) {
+                                                        if (response.isSuccessful && response.body()?.success == true) {
                                                             Toast.makeText(
                                                                 this@SignUpActivity,
-                                                                "❌ Network error",
+                                                                "✅ Registered",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+
+                                                            val roleFromResponse =
+                                                                response.body()?.user?.role
+                                                            if (roleFromResponse != null) {
+                                                                PrefsHelper.saveUserRole(this@SignUpActivity, roleFromResponse)
+                                                            }
+                                                            val next = when (roleFromResponse) {
+                                                                "citizen" -> CitizenMainActivity::class.java
+                                                                "responder" -> ResponderMainActivity::class.java
+                                                                else -> null
+                                                            }
+                                                            next?.let {
+                                                                startActivity(
+                                                                    Intent(
+                                                                        this@SignUpActivity,
+                                                                        it
+                                                                    )
+                                                                )
+                                                                finish()
+                                                            }
+                                                        } else {
+                                                            Toast.makeText(
+                                                                this@SignUpActivity,
+                                                                "⚠️ Backend registration failed",
                                                                 Toast.LENGTH_SHORT
                                                             ).show()
                                                         }
-                                                    })
-                                            }
-                                    }
-                                } else {
-                                    handleFirebaseError(it.exception)
+                                                    }
+
+                                                    override fun onFailure(
+                                                        call: Call<UserRegisterResponse>,
+                                                        t: Throwable
+                                                    ) {
+                                                        Toast.makeText(
+                                                            this@SignUpActivity,
+                                                            "❌ Network error",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    }
+                                                })
+                                        }
                                 }
+                            } else {
+                                handleFirebaseError(it.exception)
                             }
-                    }
+                        }
                 } else {
                     Snackbar.make(findViewById(R.id.signupMain), "Passwords do not match", Snackbar.LENGTH_SHORT).show()
                 }

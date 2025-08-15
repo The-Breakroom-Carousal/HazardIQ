@@ -33,7 +33,7 @@ class ReportsAdapter(
     }
 
     @SuppressLint("SetTextI18n")
-    override fun onBindViewHolder(holder: ReportViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ReportViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val report = reports[position]
         val role = PrefsHelper.getUserRole(context)
 
@@ -59,7 +59,7 @@ class ReportsAdapter(
 
         holder.btnDelete.visibility = if (role == "responder") View.VISIBLE else View.GONE
         holder.btnDelete.setOnClickListener {
-            RetrofitClient.instance.removeHazard(report.id)
+            RetrofitClient.backendInstance.removeHazard(report.id)
                 .enqueue(object : Callback<RemoveHazardResponse> {
                 override fun onResponse(call: Call<RemoveHazardResponse>, response: Response<RemoveHazardResponse>) {
                     if (response.isSuccessful) {

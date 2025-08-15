@@ -126,7 +126,7 @@ class FullScreenMapFragment : Fragment(R.layout.fragment_full_screen_map) {
                 updateAqiMapFeatures(aqiFeatures)
 
                 val hazardFeatures = mutableListOf<Feature>()
-                RetrofitClient.instance.findHazard(23.51, 80.32, 2000)
+                RetrofitClient.backendInstance.findHazard(23.51, 80.32, 2000)
                     .enqueue(object : Callback<FindHazardResponse> {
                         override fun onResponse(
                             call: Call<FindHazardResponse?>,

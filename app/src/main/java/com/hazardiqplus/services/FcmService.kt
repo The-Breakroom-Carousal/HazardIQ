@@ -107,7 +107,7 @@ class FcmService : FirebaseMessagingService(){
                     return@launch
                 }
                 val request = FcmTokenUpdateRequest(fcmToken = token)
-                val call = RetrofitClient.instance.updateUser(idToken, request)
+                val call = RetrofitClient.backendInstance.updateUser(idToken, request)
                 call.enqueue(object : Callback<UserResponse> {
                     override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
                         if (response.isSuccessful) {

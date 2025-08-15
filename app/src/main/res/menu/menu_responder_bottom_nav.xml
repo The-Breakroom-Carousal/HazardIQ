@@ -16,4 +16,8 @@
         android:id="@+id/nav_rReport"
         android:title="Report"
         android:icon="@drawable/outline_description_24" />
+    <item
+        android:id="@+id/nav_rmed_recommender"
+        android:title="Medication"
+        android:icon="@drawable/baseline_medical_services_24" />
 </menu>

@@ -70,6 +70,12 @@ class CitizenMainActivity : AppCompatActivity() {
                         .commit()
                     true
                 }
+                R.id.nav_med_recommender -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragmentContainer, MedRecommenderFragment())
+                        .commit()
+                    true
+                }
                 else -> false
             }
         }

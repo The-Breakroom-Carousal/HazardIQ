@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Button
 import android.widget.EditText
 import okhttp3.ResponseBody
 import android.widget.ImageButton
@@ -78,7 +77,7 @@ class AiChatActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             Firebase.auth.currentUser?.getIdToken(true)?.addOnSuccessListener { idTokenResult ->
                 val idToken = idTokenResult.token ?: return@addOnSuccessListener
-                RetrofitClient.instance.getHistory(idToken).enqueue(object : Callback<ChatHistoryResponse> {
+                RetrofitClient.backendInstance.getHistory(idToken).enqueue(object : Callback<ChatHistoryResponse> {
                     override fun onResponse(call: Call<ChatHistoryResponse>, response: Response<ChatHistoryResponse>) {
                         if (response.isSuccessful && response.body()?.success == true) {
                             messages.clear()
@@ -111,7 +110,7 @@ class AiChatActivity : AppCompatActivity() {
         Firebase.auth.currentUser?.getIdToken(true)?.addOnSuccessListener { idTokenResult ->
             val idToken = idTokenResult.token ?: return@addOnSuccessListener
             val req = AiChatRequest(msg)
-            RetrofitClient.instance.sendMessage(idToken, req).enqueue(object : Callback<AiChatResponse> {
+            RetrofitClient.backendInstance.sendMessage(idToken, req).enqueue(object : Callback<AiChatResponse> {
                 override fun onResponse(call: Call<AiChatResponse>, response: Response<AiChatResponse>) {
                     if (response.isSuccessful) {
                         val body = response.body()
@@ -168,7 +167,7 @@ class AiChatActivity : AppCompatActivity() {
             val idToken = tokenResult.token ?: return@addOnSuccessListener
 
             // The callback now expects ResponseBody
-            RetrofitClient.instance.restartChat(idToken).enqueue(object : Callback<ResponseBody> {
+            RetrofitClient.backendInstance.restartChat(idToken).enqueue(object : Callback<ResponseBody> {
                 override fun onResponse(
                     call: Call<ResponseBody>,
                     response: Response<ResponseBody>
@@ -200,7 +199,7 @@ class AiChatActivity : AppCompatActivity() {
         super.onDestroy()
         Firebase.auth.currentUser?.getIdToken(true)?.addOnSuccessListener { tokenResult ->
             val idToken = tokenResult.token ?: return@addOnSuccessListener
-            RetrofitClient.instance.restartChat(idToken).enqueue(object : Callback<ResponseBody> {
+            RetrofitClient.backendInstance.restartChat(idToken).enqueue(object : Callback<ResponseBody> {
                 override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     Log.d("AI_CHAT", "server history cleared on exit")
                 }

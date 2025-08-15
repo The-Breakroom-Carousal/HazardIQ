@@ -21,6 +21,7 @@ import com.hazardiqplus.data.FcmTokenUpdateRequest
 import com.hazardiqplus.data.UserResponse
 import com.hazardiqplus.ui.AiChatActivity
 import com.hazardiqplus.ui.ProfileActivity
+import com.hazardiqplus.ui.citizen.MedRecommenderFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenReportsFragment
 import com.hazardiqplus.ui.citizen.fragments.CitizenWeatherFragment
 import com.hazardiqplus.ui.citizen.fragments.FullScreenMapFragment
@@ -88,6 +89,12 @@ class ResponderMainActivity : AppCompatActivity() {
                         .commit()
                     true
                 }
+                R.id.nav_rmed_recommender -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.responderFragmentContainer, MedRecommenderFragment())
+                        .commit()
+                    true
+                }
                 else -> false
             }
         }
@@ -133,7 +140,7 @@ class ResponderMainActivity : AppCompatActivity() {
             val request = FcmTokenUpdateRequest(fcmToken = fcmToken)
 
 
-            val call = RetrofitClient.instance.updateUser(idToken, request)
+            val call = RetrofitClient.backendInstance.updateUser(idToken, request)
 
             call.enqueue(object : Callback<UserResponse> {
                 override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {

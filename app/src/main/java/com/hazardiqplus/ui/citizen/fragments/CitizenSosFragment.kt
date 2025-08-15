@@ -164,7 +164,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
 
     private fun fetchMySosRequests(city: String) {
         Firebase.auth.currentUser?.uid?.let { uid ->
-            RetrofitClient.instance.getSosEvents(city)
+            RetrofitClient.backendInstance.getSosEvents(city)
                 .enqueue(object : Callback<List<SosEvent>> {
                     override fun onResponse(call: Call<List<SosEvent>>, response: Response<List<SosEvent>>) {
                         if (response.isSuccessful && response.body() != null) {
@@ -206,7 +206,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
     }
 
     private fun deleteMySos(event: SosEvent) {
-        RetrofitClient.instance.deleteSosEvent(event.id)
+        RetrofitClient.backendInstance.deleteSosEvent(event.id)
             .enqueue(object : Callback<com.hazardiqplus.data.DeleteSosResponse> {
                 override fun onResponse(
                     call: Call<com.hazardiqplus.data.DeleteSosResponse>,
@@ -233,7 +233,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
                 val token = result.token
                 if (token != null) {
                     val request = UpdateProgressRequest(progress = "resolved", token)
-                    RetrofitClient.instance.updateSosProgress(event.id, request)
+                    RetrofitClient.backendInstance.updateSosProgress(event.id, request)
                         .enqueue(object : Callback<UpdateProgressResponse> {
                             override fun onResponse(
                                 call: Call<UpdateProgressResponse>,
@@ -305,7 +305,7 @@ class CitizenSosFragment : Fragment(R.layout.fragment_citizen_sos) {
                             lat = location.latitude,
                             lng = location.longitude
                         )
-                        RetrofitClient.instance.sendSosAlert(request)
+                        RetrofitClient.backendInstance.sendSosAlert(request)
                             .enqueue(object : Callback<SosResponse> {
                                 override fun onResponse(
                                     call: Call<SosResponse>,

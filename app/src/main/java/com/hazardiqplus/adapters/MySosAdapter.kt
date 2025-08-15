@@ -55,7 +55,7 @@ class MySosAdapter(
         if (event.progress == "acknowledged" && event.responder_uid != null) {
             holder.btnMarkAsResolved.visibility = View.VISIBLE
             holder.btnChat.visibility = View.VISIBLE
-            RetrofitClient.instance.getUserName(event.responder_uid)
+            RetrofitClient.backendInstance.getUserName(event.responder_uid)
                 .enqueue(object : Callback<UserName> {
                     override fun onResponse(
                         call: Call<UserName>,

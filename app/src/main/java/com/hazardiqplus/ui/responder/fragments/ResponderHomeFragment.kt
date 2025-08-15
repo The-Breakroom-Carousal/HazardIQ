@@ -122,7 +122,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
 
     private fun fetchSosRequests(city: String) {
         if (firstLoad) progressCircular.visibility = View.VISIBLE
-        RetrofitClient.instance.getSosEvents(city)
+        RetrofitClient.backendInstance.getSosEvents(city)
             .enqueue(object : Callback<List<SosEvent>> {
                 override fun onResponse(
                     call: Call<List<SosEvent>>,
@@ -174,7 +174,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                 val token = result.token
                 if (token != null) {
                     val request = UpdateProgressRequest(progress = "acknowledged", token)
-                    RetrofitClient.instance.updateSosProgress(event.id, request)
+                    RetrofitClient.backendInstance.updateSosProgress(event.id, request)
                         .enqueue(object : Callback<UpdateProgressResponse> {
                             override fun onResponse(
                                 call: Call<UpdateProgressResponse>,
@@ -213,7 +213,7 @@ class ResponderHomeFragment : Fragment(R.layout.fragment_responder_home),
                 val token = result.token
                 if (token != null) {
                     val request = UpdateProgressRequest(progress = "resolved", token)
-                    RetrofitClient.instance.updateSosProgress(event.id, request)
+                    RetrofitClient.backendInstance.updateSosProgress(event.id, request)
                         .enqueue(object : Callback<UpdateProgressResponse> {
                             override fun onResponse(
                                 call: Call<UpdateProgressResponse>,
