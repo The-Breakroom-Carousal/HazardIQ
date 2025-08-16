@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-dotenv
+psycopg2-binary
+
+pinecone-client
+llama-index
+llama-index-core
+llama-index-llms-gemini
+llama-index-embeddings-gemini
+llama-index-vector-stores-pinecone
+
+google-generativeai
+fastapi[standard]
