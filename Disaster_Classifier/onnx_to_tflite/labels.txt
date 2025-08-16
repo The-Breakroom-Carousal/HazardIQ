@@ -1,0 +1,22 @@
+0: 'Water_Disaster',
+1: 'Non_Damaged_Wildlife_Forest',
+2: 'Non_Damaged_sea',
+3: 'Non_Damaged_Buildings_Street',
+4: 'Non_Damaged_human',
+5: 'Damaged_Infrastructure',
+6: 'Earthquake',
+7: 'Human_Damage',
+8: 'Urban_Fire',
+9: 'Wild_Fire',
+10: 'Land_Slide',
+11: 'Drought'
+
+What to do ->
+(1) Convert image to RGB
+(2) Apply CLAHE (LAB-based histogram equalization)
+(3) Resize to 224×224
+(4) Normalize with ImageNet stats:
+      mean = [0.485, 0.456, 0.406]
+      std  = [0.229, 0.224, 0.225]
+(5) Convert to tensor in shape: [1, 3, 224, 224] (CHW, batch-first)
+(6) dtype = float32
