@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="4dp"
+    android:paddingHorizontal="8dp"
+    android:clipToPadding="false">
+
+    <TextView
+        android:id="@+id/messageText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="60dp"
+        android:background="@drawable/bg_chat_bubble_me"
+        android:elevation="2dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:text="This is my message to the AI."
+        android:textColor="@android:color/white"
+        android:textSize="16sp" />
+</RelativeLayout>

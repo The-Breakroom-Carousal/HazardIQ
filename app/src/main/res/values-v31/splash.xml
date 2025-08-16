@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.HazardIQ.AnimatedSplash" parent="Theme.HazardIQ">
+        <item name="android:windowSplashScreenBackground">?attr/android:colorBackground</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/avd_hazardiq</item>
+        <item name="android:windowSplashScreenAnimationDuration">1500</item>
+        <item name="postSplashScreenTheme">@style/Theme.HazardIQ</item>"
+    </style>
+</resources>

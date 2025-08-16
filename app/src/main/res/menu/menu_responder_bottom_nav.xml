@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_rhome"
+        android:title="Home"
+        android:icon="@drawable/round_home_24" />
+    <item
+        android:id="@+id/nav_map"
+        android:title="Map"
+        android:icon="@drawable/outline_location_on_24" />
+    <item
+        android:id="@+id/nav_rweather"
+        android:title="Weather"
+        android:icon="@drawable/baseline_cloud_queue_24" />
+    <item
+        android:id="@+id/nav_rReport"
+        android:title="Report"
+        android:icon="@drawable/outline_description_24" />
+    <item
+        android:id="@+id/nav_rmed_recommender"
+        android:title="Medication"
+        android:icon="@drawable/baseline_medical_services_24" />
+</menu>

@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">HazardIQ+</string>
+    <string name="not_registerd"><u>Not Registered Yet?\nSign Up!</u></string>
+    <string name="default_web_client_id">1:1097758068194:android:4e9c3cbc65366b8c1d7dbb</string>
+    <string name="title_activity_citizen_main">CitizenMainActivity</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="sos_button">SOS Button</string>
+    <string-array name="aqi_options">
+        <item>Live AQI</item>
+        <item>Forecast AQI</item>
+        <item>Weather</item>
+        <item>Hazards</item>
+    </string-array>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
