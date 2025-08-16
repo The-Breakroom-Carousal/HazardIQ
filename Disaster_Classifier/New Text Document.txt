@@ -1,0 +1,47 @@
+🚀 Project Showcase: CNN-based Natural Disaster Classification Model 🌍
+
+I recently built a deep learning model to classify natural disasters like Floods, Earthquakes, Droughts, and Wildfires using image data from a Kaggle dataset. The focus was on accuracy, fairness across classes, and mobile efficiency for real-time use.
+
+🔍 Exploratory Data Analysis (EDA)
+Two major observations:
+
+Class Imbalance – Certain disaster types had fewer samples.
+
+Non-uniform Pixel Intensities – The image CDF was not linear, meaning many images were either too dark or too bright.
+
+Solutions:
+
+Intensity Correction: Applied CLAHE (Contrast Limited Adaptive Histogram Equalization) – enhances local contrast so hidden details in dark/bright areas become visible.
+
+Class Imbalance Handling:
+
+Stratified K-Fold Cross Validation: Ensured folds preserved the original dataset’s class ratios.
+
+Class Weights in CrossEntropy Loss: Gave more weight to minority classes to reduce bias.
+
+🛠 Model Development
+Data Augmentation: Applied transformations like random flips, rotations, color jitter, and normalization to make the model robust to real-world variations.
+
+Framework: PyTorch + timm library.
+
+Architecture: EfficientNet-Lite-02 (optimized for mobile).
+
+Optimizer: Adam – adaptive learning rate optimization for faster convergence.
+
+Training Strategy:
+
+Batch Gradient Descent (mini-batch) – balanced stability and efficiency during training.
+
+Differential Learning Rates: Lower LR for pretrained layers, higher LR for new layers.
+
+One-Cycle Learning Rate Policy: Cyclical LR scheduling for faster convergence and better generalization.
+
+📊 Evaluation Metrics
+Focused on Accuracy, Precision, Recall, and F1-score, with special emphasis on Recall to reduce missed disaster cases.
+
+📦 Model Deployment
+Exported to ONNX (Open Neural Network Exchange) – ensures compatibility across frameworks.
+
+Converted to TensorFlow Lite (.tflite) – lightweight format ready for mobile app integration in disaster response systems.
+
+💡 This project strengthened my expertise in deep learning, preprocessing, model optimization, and deployment — showing how AI can be made practical for on-device disaster detection.
