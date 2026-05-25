@@ -117,6 +117,15 @@ const createSosEventsTable  = async () => {
   }
 };
 
+const enableExtensions = async () => {
+  try {
+    await pool.query('CREATE EXTENSION IF NOT EXISTS cube;');
+    await pool.query('CREATE EXTENSION IF NOT EXISTS earthdistance;');
+    console.log("✅ Enabled 'cube' and 'earthdistance' extensions");
+  } catch (error) {
+    console.error("❌ Error enabling extensions:", error);
+  }
+};
 
 const init = async () => {
   await createUsersTable();
@@ -125,6 +134,7 @@ const init = async () => {
   await hazardChatTable();
   await createSosEventsTable();
   await sosChatTable();
+  await enableExtensions();
 };
 
 init();
